@@ -98,13 +98,17 @@ export function resolveStorageConfig(env: EnvRecord): ResolvedStorageConfig {
 }
 
 /**
- * 把存储变量渲染成 wrangler.toml `[vars]` 片段。
+ * 把变量渲染成 wrangler.toml 的 `KEY = "value"` 行。
  *
- * `indent` 需与调用处的模板缩进一致，否则 stripIndent 计算最小缩进时会错位。
+ * 输出零缩进：调用方会把它拼在已 stripIndent 的配置之外单独追加。
+ * 缺值统一写空串，而不是抛错或输出 undefined。
  */
-export function buildStorageVarsToml(vars: Record<string, string>, indent = "") {
+export function buildStorageVarsToml(
+  vars: Record<string, string | undefined>,
+  indent = "",
+) {
   return Object.entries(vars)
-    .map(([key, value]) => `${indent}${key} = "${value}"`)
+    .map(([key, value]) => `${indent}${key} = "${value ?? ""}"`)
     .join("\n");
 }
 

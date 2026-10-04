@@ -186,36 +186,46 @@ export async function runCloudflareDeploy(target: "all" | "server" | "client" = 
   const hasServerBuild = await serverDistIndex.exists();
   const serverMain = hasServerBuild ? "dist/server/_worker.js" : "server/src/_worker.ts";
 
+  // [vars] 段单独拼装后追加，不放进 stripIndent 模板。
+  // 原因：插值出来的行是零缩进，会让 stripIndent 算出的最小缩进变成 0，
+  // 结果整个模板（包括 main）都不去缩进，TOML 表结构错乱，
+  // wrangler 报 "Missing entry-point to Worker script"。
+  const varsToml = buildStorageVarsToml({
+    ...storageConfig.vars,
+    WEBHOOK_URL: webhookUrl,
+    RSS_TITLE: rssTitle,
+    RSS_DESCRIPTION: rssDescription,
+    CACHE_STORAGE_MODE: cacheStorageMode,
+    NAME: name,
+    DESCRIPTION: description,
+    AVATAR: avatar,
+    PAGE_SIZE: pageSize,
+    RSS_ENABLE: rssEnable,
+    FRONTEND_URL: frontendUrl,
+  });
   Bun.write(
     "wrangler.toml",
-    stripIndent(`
-      #:schema node_modules/wrangler/config-schema.json
-      name = "${workerName}"
-      main = "${serverMain}"
-      compatibility_date = "2026-01-20"
+    [
+      stripIndent(`
+        #:schema node_modules/wrangler/config-schema.json
+        name = "${workerName}"
+        main = "${serverMain}"
+        compatibility_date = "2026-01-20"
 
-      [assets]
-      directory = "./dist/client"
-      binding = "ASSETS"
-      ${buildWranglerTriggersConfig(preview)}
-      ${buildWranglerObservabilityConfig(preview)}
+        [assets]
+        directory = "./dist/client"
+        binding = "ASSETS"
+        ${buildWranglerTriggersConfig(preview)}
+        ${buildWranglerObservabilityConfig(preview)}
 
-      [vars]
-      ${buildStorageVarsToml(storageConfig.vars)}
-      WEBHOOK_URL = "${webhookUrl}"
-      RSS_TITLE = "${rssTitle}"
-      RSS_DESCRIPTION = "${rssDescription}"
-      CACHE_STORAGE_MODE = "${cacheStorageMode}"
-      NAME = "${name}"
-      DESCRIPTION = "${description}"
-      AVATAR = "${avatar}"
-      PAGE_SIZE = "${pageSize}"
-      RSS_ENABLE = "${rssEnable}"
-      FRONTEND_URL = "${frontendUrl}"
-
-      [placement]
-      mode = "smart"
-    `),
+        [placement]
+        mode = "smart"
+      `),
+      "",
+      "[vars]",
+      varsToml,
+      "",
+    ].join("\n"),
   );
 
   const { exitCode, stderr, stdout } = await $`${bunExec} x wrangler d1 create ${dbName}`.quiet().nothrow();

@@ -109,9 +109,19 @@ describe("buildStorageVarsToml", () => {
         expect(toml).toBe('S3_FOLDER = "images/"\nSTORAGE_PROVIDER = "s3"');
     });
 
-    it("applies the given indent to every line", () => {
-        const toml = buildStorageVarsToml({ A: "1", B: "2" }, "  ");
+it("applies the given indent to every line", () => {
+  const toml = buildStorageVarsToml({ A: "1", B: "2" }, "  ");
 
-        expect(toml).toBe('  A = "1"\n  B = "2"');
-    });
+  expect(toml).toBe('  A = "1"\n  B = "2"');
+});
+
+it("emits zero-indent lines so the block can be appended outside stripIndent", () => {
+  // deploy-cf 把 [vars] 段整体移出 stripIndent 模板单独追加，
+  // 因此这里必须输出零缩进；否则 stripIndent 会因插值行缩进为 0
+  // 而判定最小缩进为 0，导致 main 等字段带着缩进、wrangler 读不到 entry-point。
+  const toml = buildStorageVarsToml({ A: "1", B: "2" });
+
+  expect(toml).toBe('A = "1"\nB = "2"');
+  expect(toml.split("\n").every((line) => !line.startsWith(" "))).toBe(true);
+});
 });
