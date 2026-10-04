@@ -8,6 +8,7 @@ import {
   updateMigrationVersion,
 } from "../lib/db-migration";
 import { buildStorageVarsToml, resolveStorageConfig } from "../lib/storage-config";
+import { parseWranglerJson } from "../lib/wrangler-json";
 const bunExec = process.execPath;
 
 function env(name: string, defaultValue?: string, required = false) {
@@ -233,17 +234,31 @@ export async function runCloudflareDeploy(target: "all" | "server" | "client" = 
     process.exit(1);
   }
 
-  const listJson = (JSON.parse(await $`${bunExec} x wrangler d1 list --json`.quiet().text()) as Array<{ name: string; uuid: string }>).find(
-    (item) => item.name === dbName,
-  );
-  if (listJson) {
-    await $`echo ${stripIndent(`
+  const d1List = parseWranglerJson(
+    await $`${bunExec} x wrangler d1 list --json`.quiet().text(),
+  ) as Array<{ name: string; uuid: string }>;
+
+  const listJson = d1List.find((item) => item.name === dbName);
+
+  if (!listJson) {
+    // 写不出真实 uuid 时，wrangler 会沿用 setup-dev 留下的 database_id = "local"，
+    // 部署阶段必然报 "must have a valid database_id"。这里提前给出明确原因。
+    const available = d1List.map((item) => item.name).join(", ");
+    console.error(`Failed to resolve D1 database "${dbName}" on this Cloudflare account.`);
+    console.error(
+      available
+        ? `Available databases: ${available}. Set DB_NAME to one of them, or create it with: wrangler d1 create ${dbName}`
+        : `No D1 databases found. Check CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID, or create it with: wrangler d1 create ${dbName}`,
+    );
+    process.exit(1);
+  }
+
+  await $`echo ${stripIndent(`
       [[d1_databases]]
       binding = "DB"
       database_name = "${listJson.name}"
       database_id = "${listJson.uuid}"
     `)} >> wrangler.toml`.quiet();
-  }
 
   await $`echo ${stripIndent(`
     [ai]
