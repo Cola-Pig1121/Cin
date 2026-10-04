@@ -197,7 +197,7 @@ export function createMockSupabaseEnv(overrides: Partial<Env> = {}): Env {
     return createMockEnv({
         STORAGE_PROVIDER: 'supabase',
         SUPABASE_URL: 'https://test-project.supabase.co',
-        SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
+        SUPABASE_SECRET_KEY: 'sb_secret_test-key',
         SUPABASE_STORAGE_BUCKET: 'test-bucket',
         SUPABASE_STORAGE_PUBLIC: 'false',
         S3_ACCESS_KEY_ID: '',

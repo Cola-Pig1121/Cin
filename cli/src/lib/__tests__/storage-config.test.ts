@@ -21,7 +21,7 @@ describe("resolveStorageConfig", () => {
         const config = resolveStorageConfig({
             SUPABASE_URL: "https://x.supabase.co",
             SUPABASE_STORAGE_BUCKET: "rin",
-            SUPABASE_SERVICE_ROLE_KEY: "key",
+            SUPABASE_SECRET_KEY: "key",
         });
 
         expect(config.provider).toBe("supabase");
@@ -35,21 +35,33 @@ describe("resolveStorageConfig", () => {
         const config = resolveStorageConfig({
             SUPABASE_URL: "https://x.supabase.co",
             SUPABASE_STORAGE_BUCKET: "rin",
-            SUPABASE_SERVICE_ROLE_KEY: "super-secret",
+            SUPABASE_SECRET_KEY: "super-secret",
         });
 
-        expect(config.vars.SUPABASE_SERVICE_ROLE_KEY).toBeUndefined();
-        expect(config.secrets.SUPABASE_SERVICE_ROLE_KEY).toBe("super-secret");
+        expect(config.vars.SUPABASE_SECRET_KEY).toBeUndefined();
+        expect(config.secrets.SUPABASE_SECRET_KEY).toBe("super-secret");
     });
 
     it("defaults SUPABASE_STORAGE_PUBLIC to false", () => {
         const config = resolveStorageConfig({
             SUPABASE_URL: "https://x.supabase.co",
             SUPABASE_STORAGE_BUCKET: "rin",
-            SUPABASE_SERVICE_ROLE_KEY: "key",
+            SUPABASE_SECRET_KEY: "key",
         });
 
         expect(config.vars.SUPABASE_STORAGE_PUBLIC).toBe("false");
+    });
+
+    it("accepts the legacy SUPABASE_SERVICE_ROLE_KEY name", () => {
+        const config = resolveStorageConfig({
+            SUPABASE_URL: "https://x.supabase.co",
+            SUPABASE_STORAGE_BUCKET: "rin",
+            SUPABASE_SERVICE_ROLE_KEY: "sb_secret_from_old_name",
+        });
+
+        expect(config.missing).toEqual([]);
+        expect(config.secrets.SUPABASE_SECRET_KEY).toBe("sb_secret_from_old_name");
+        expect(config.secrets.SUPABASE_SERVICE_ROLE_KEY).toBeUndefined();
     });
 
     it("reports every missing supabase variable", () => {
@@ -58,7 +70,7 @@ describe("resolveStorageConfig", () => {
         expect(config.provider).toBe("supabase");
         expect(config.missing).toEqual([
             "SUPABASE_URL",
-            "SUPABASE_SERVICE_ROLE_KEY",
+            "SUPABASE_SECRET_KEY",
             "SUPABASE_STORAGE_BUCKET",
         ]);
     });
@@ -68,7 +80,7 @@ describe("resolveStorageConfig", () => {
             STORAGE_PROVIDER: "s3",
             SUPABASE_URL: "https://x.supabase.co",
             SUPABASE_STORAGE_BUCKET: "rin",
-            SUPABASE_SERVICE_ROLE_KEY: "key",
+            SUPABASE_SECRET_KEY: "key",
         });
 
         expect(config.provider).toBe("s3");
@@ -82,7 +94,7 @@ describe("resolveStorageConfig", () => {
         const config = resolveStorageConfig({
             SUPABASE_URL: "https://x.supabase.co",
             SUPABASE_STORAGE_BUCKET: "rin",
-            SUPABASE_SERVICE_ROLE_KEY: "key",
+            SUPABASE_SECRET_KEY: "key",
         });
 
         expect(config.vars.S3_FOLDER).toBe("images/");

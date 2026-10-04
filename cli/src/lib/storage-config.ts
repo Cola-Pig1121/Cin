@@ -42,8 +42,10 @@ export function resolveStorageConfig(env: EnvRecord): ResolvedStorageConfig {
     vars.SUPABASE_STORAGE_BUCKET = env.SUPABASE_STORAGE_BUCKET || "";
     vars.SUPABASE_STORAGE_PUBLIC = env.SUPABASE_STORAGE_PUBLIC || "false";
 
-    if (env.SUPABASE_SERVICE_ROLE_KEY) {
-      secrets.SUPABASE_SERVICE_ROLE_KEY = env.SUPABASE_SERVICE_ROLE_KEY;
+    // 兼容旧变量名：旧名填入时同步到新名，保证 wrangler.toml 只需一个键
+    const secretKey = env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
+    if (secretKey) {
+      secrets.SUPABASE_SECRET_KEY = secretKey;
     }
 
     // Supabase 模式下同样保留 S3_* 的公共配置（folder 前缀）
@@ -56,7 +58,7 @@ export function resolveStorageConfig(env: EnvRecord): ResolvedStorageConfig {
       secrets,
       missing: [
         !env.SUPABASE_URL && "SUPABASE_URL",
-        !env.SUPABASE_SERVICE_ROLE_KEY && "SUPABASE_SERVICE_ROLE_KEY",
+        !secretKey && "SUPABASE_SECRET_KEY",
         !env.SUPABASE_STORAGE_BUCKET && "SUPABASE_STORAGE_BUCKET",
       ].filter((name): name is string => Boolean(name)),
     };

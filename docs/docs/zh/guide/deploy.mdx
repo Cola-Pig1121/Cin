@@ -125,7 +125,7 @@ Rin 会根据你填写的变量自动选择后端，无需手动指定。若想�
 
 | Secret 名称 | 说明 |
 |------------|------|
-| `SUPABASE_SERVICE_ROLE_KEY` | service_role key（Project Settings → API） |
+| `SUPABASE_SECRET_KEY` | 高权限 key：sb_secret_...（推荐）或 legacy service_role JWT |
 
 配置后部署脚本会跳过 R2 绑定，直接使用 Supabase Storage。Rin 走 Supabase 的 Storage REST API，无需在 Supabase 侧配置 S3 凭证。
 

@@ -58,7 +58,7 @@ function getRequiredStorageKeys(env: Env, provider: StorageProviderKind) {
   if (provider === "supabase") {
     return [
       ["SUPABASE_URL", env.SUPABASE_URL],
-      ["SUPABASE_SERVICE_ROLE_KEY", env.SUPABASE_SERVICE_ROLE_KEY],
+      ["SUPABASE_SECRET_KEY", env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY],
       ["SUPABASE_STORAGE_BUCKET", env.SUPABASE_STORAGE_BUCKET],
     ] as const;
   }

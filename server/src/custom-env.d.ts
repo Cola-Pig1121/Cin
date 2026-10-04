@@ -15,7 +15,13 @@ declare global {
 
     /** Supabase Storage：项目地址，如 https://xxxx.supabase.co */
     SUPABASE_URL?: string;
-    /** Supabase Storage：service_role key，拥有 RLS 豁免权。部署时作为 Worker Secret 注入 */
+    /**
+     * Supabase Storage：高权限 key，绕过 RLS，可读写私有 bucket。
+     * 推荐 sb_secret_...（新版）；也接受 legacy service_role（eyJ 开头的 JWT）。
+     * 部署时作为 Worker Secret 注入。旧名 SUPABASE_SERVICE_ROLE_KEY 仍兼容。
+     */
+    SUPABASE_SECRET_KEY?: string;
+    /** @deprecated 旧变量名，请改用 SUPABASE_SECRET_KEY */
     SUPABASE_SERVICE_ROLE_KEY?: string;
     /** Supabase Storage：storage bucket 名 */
     SUPABASE_STORAGE_BUCKET?: string;

@@ -25,19 +25,38 @@ export class SupabaseObjectStorage implements ObjectStorage {
     constructor(
         projectUrl: string,
         private bucket: string,
-        private serviceRoleKey: string,
+        private apiKey: string,
         /** bucket 是否为 public。公开桶才敢直链，否则一律走 Worker 反代 */
         private isPublicBucket: boolean,
     ) {
         this.baseUrl = `${trimUrl(projectUrl)}/storage/v1`;
     }
 
-    /** 鉴权头。service_role 拥有 RLS 豁免权，可读写私有 bucket */
+    /**
+     * 鉴权头。按 key 形态分派，因为四种 key 的要求互不相同：
+     *
+     *   sb_secret_...（新版高权限）→ 仅 `apikey` 头。
+     *       它不是 JWT，放进 `Authorization: Bearer` 会被判为非法凭据。
+     *   eyJ...（legacy service_role JWT）→ `apikey` + `Authorization: Bearer`。
+     *   sb_publishable_...（新版低权限）→ 仅 `apikey` 头，且受 RLS 约束，
+     *       访问私有 bucket 需要为该 bucket 配好策略。
+     *
+     * 依据：Supabase "Migrating to publishable and secret API keys"。
+     */
     private authHeaders(): Headers {
         const headers = new Headers();
-        headers.set("apikey", this.serviceRoleKey);
-        headers.set("Authorization", `Bearer ${this.serviceRoleKey}`);
+        headers.set("apikey", this.apiKey);
+
+        if (this.isLegacyJwtKey()) {
+            headers.set("Authorization", `Bearer ${this.apiKey}`);
+        }
+
         return headers;
+    }
+
+    /** legacy service_role 是 JWT（以 eyJ 开头），新版 key 都是短字符串 */
+    private isLegacyJwtKey(): boolean {
+        return this.apiKey.startsWith("eyJ");
     }
 
     private objectUrl(storageKey: string): string {
@@ -201,9 +220,12 @@ export function createSupabaseObjectStorage(env: Env): SupabaseObjectStorage {
     if (!env.SUPABASE_URL) {
         missingConfig("SUPABASE_URL");
     }
-    if (!env.SUPABASE_SERVICE_ROLE_KEY) {
-        missingConfig("SUPABASE_SERVICE_ROLE_KEY");
+
+    const apiKey = env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!apiKey) {
+        missingConfig("SUPABASE_SECRET_KEY");
     }
+
     if (!env.SUPABASE_STORAGE_BUCKET) {
         missingConfig("SUPABASE_STORAGE_BUCKET");
     }
@@ -211,7 +233,7 @@ export function createSupabaseObjectStorage(env: Env): SupabaseObjectStorage {
     return new SupabaseObjectStorage(
         env.SUPABASE_URL,
         env.SUPABASE_STORAGE_BUCKET,
-        env.SUPABASE_SERVICE_ROLE_KEY,
+        apiKey,
         env.SUPABASE_STORAGE_PUBLIC === "true",
     );
 }

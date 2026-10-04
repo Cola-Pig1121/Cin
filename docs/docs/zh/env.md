@@ -124,10 +124,21 @@ Rin 走 Supabase 的 **Storage REST API**（`/storage/v1/object/{bucket}/{path}`
 
 | 变量名 | 用途 | 获取方式 |
 |--------|------|----------|
-| `SUPABASE_SERVICE_ROLE_KEY` | service_role key，拥有 RLS 豁免权，可读写私有 bucket | Supabase 控制台 → Project Settings → API → service_role |
+| `SUPABASE_SECRET_KEY` | 高权限 key，绕过 RLS，可读写私有 bucket | Supabase 控制台 → Project Settings → API |
+
+`SUPABASE_SECRET_KEY` 接受两种形态，代码按 key 形态自动适配鉴权头：
+
+| 形态 | 来源 | 说明 |
+|------|------|------|
+| `sb_secret_...` | API → **Secret keys** | 推荐。非 JWT，只发 `apikey` 头 |
+| `eyJ...`（JWT） | API → **Legacy keys** → service_role | 旧版，同时发 `apikey` + `Authorization: Bearer` |
+
+:::tip 关于 publishable key
+Supabase 新版还有 `sb_publishable_...`（对应旧的 `anon` key），但它**受 RLS 约束**，无法绕过策略直接读写私有 bucket，因此不适用于本项目的服务端存储访问。替代 `service_role` 的是 **secret key**，不是 publishable key。
+:::
 
 :::warning
-`service_role` key 等同于数据库超级权限，仅在 Worker 端使用。**不要**放进客户端代码或暴露在前端。
+`service_role` / secret key 等同于数据库超级权限，仅在 Worker 端使用。**不要**放进客户端代码或暴露在前端。Supabase 已计划在 2026 年底弃用旧的 `anon` / `service_role` key，建议直接使用新版 secret key。
 :::
 
 ### Cloudflare 部署凭证
@@ -166,7 +177,7 @@ DB_NAME                    # D1 数据库名称（可选）
 ```
 CLOUDFLARE_API_TOKEN      # Cloudflare API 令牌
 CLOUDFLARE_ACCOUNT_ID     # Cloudflare 账户 ID
-SUPABASE_SERVICE_ROLE_KEY # Supabase service_role key（provider=supabase 时必填）
+SUPABASE_SECRET_KEY # Supabase service_role key（provider=supabase 时必填）
 S3_ENDPOINT               # S3/R2 接入点
 S3_ACCESS_HOST            # S3/R2 访问域名
 S3_BUCKET                 # S3 存储桶名称
@@ -201,7 +212,7 @@ S3_SECRET_ACCESS_KEY=xxx
 # SUPABASE_URL=https://xxxx.supabase.co
 # SUPABASE_STORAGE_BUCKET=rin
 # SUPABASE_STORAGE_PUBLIC=true
-# SUPABASE_SERVICE_ROLE_KEY=xxx
+# SUPABASE_SECRET_KEY=sb_secret_xxx
 
 # 认证（GitHub 或账号密码）
 RIN_GITHUB_CLIENT_ID=xxx

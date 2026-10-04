@@ -87,8 +87,8 @@ describe("resolveStorageProvider", () => {
     });
 
     it("reports missing supabase config with the 'is not defined' contract", () => {
-        const env = createMockSupabaseEnv({ SUPABASE_SERVICE_ROLE_KEY: "" });
-        expect(() => resolveStorageProvider(env)).toThrow("SUPABASE_SERVICE_ROLE_KEY is not defined");
+        const env = createMockSupabaseEnv({ SUPABASE_SECRET_KEY: "" });
+        expect(() => resolveStorageProvider(env)).toThrow("SUPABASE_SECRET_KEY is not defined");
     });
 
     it("reports missing s3 config with the 'is not defined' contract", () => {
@@ -200,15 +200,45 @@ describe("SupabaseObjectStorage", () => {
         );
     });
 
-    it("sends apikey and bearer auth headers", async () => {
+    it("sends only the apikey header for secret keys", async () => {
         const calls = mockFetch(() => new Response("body", { status: 200 }));
         const storage = createSupabaseObjectStorage(createMockSupabaseEnv());
 
         await storage.get("images/a.png");
 
         const headers = calls[0].init.headers as Headers;
-        expect(headers.get("apikey")).toBe("test-service-role-key");
-        expect(headers.get("Authorization")).toBe("Bearer test-service-role-key");
+        expect(headers.get("apikey")).toBe("sb_secret_test-key");
+        // sb_secret_ 不是 JWT，放进 Authorization: Bearer 会被判为非法凭据
+        expect(headers.get("Authorization")).toBe(null);
+    });
+
+    it("sends both headers for legacy service_role JWTs", async () => {
+        const calls = mockFetch(() => new Response("body", { status: 200 }));
+        const legacyJwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.sig";
+        const storage = createSupabaseObjectStorage(
+            createMockSupabaseEnv({ SUPABASE_SECRET_KEY: legacyJwt }),
+        );
+
+        await storage.get("images/a.png");
+
+        const headers = calls[0].init.headers as Headers;
+        expect(headers.get("apikey")).toBe(legacyJwt);
+        expect(headers.get("Authorization")).toBe(`Bearer ${legacyJwt}`);
+    });
+
+    it("falls back to the legacy variable name when the new one is unset", async () => {
+        const calls = mockFetch(() => new Response("body", { status: 200 }));
+        const storage = createSupabaseObjectStorage(
+            createMockSupabaseEnv({
+                SUPABASE_SECRET_KEY: "",
+                SUPABASE_SERVICE_ROLE_KEY: "sb_secret_from_old_name",
+            }),
+        );
+
+        await storage.get("images/a.png");
+
+        const headers = calls[0].init.headers as Headers;
+        expect(headers.get("apikey")).toBe("sb_secret_from_old_name");
     });
 
     it("encodes each key segment to prevent path traversal", async () => {

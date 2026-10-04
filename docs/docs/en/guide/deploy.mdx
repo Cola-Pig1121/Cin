@@ -124,7 +124,7 @@ And the following Secret:
 
 | Secret Name | Description |
 |-------------|-------------|
-| `SUPABASE_SERVICE_ROLE_KEY` | service_role key (Project Settings → API) |
+| `SUPABASE_SECRET_KEY` | Elevated key: sb_secret_... (recommended) or legacy service_role JWT |
 
 Once configured, the deployment script skips the R2 binding and uses Supabase Storage directly. Rin talks to Supabase through the Storage REST API, so no S3 credentials need to be set up on the Supabase side.
 

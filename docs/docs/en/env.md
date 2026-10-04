@@ -124,10 +124,21 @@ Only needed when `STORAGE_PROVIDER` is `supabase`:
 
 | Variable | Purpose | How to Obtain |
 |----------|---------|---------------|
-| `SUPABASE_SERVICE_ROLE_KEY` | service_role key; bypasses RLS and can read/write private buckets | Supabase Dashboard → Project Settings → API → service_role |
+| `SUPABASE_SECRET_KEY` | Elevated key; bypasses RLS and can read/write private buckets | Supabase Dashboard → Project Settings → API |
+
+`SUPABASE_SECRET_KEY` accepts two formats, and the code adapts the auth headers based on the key shape:
+
+| Format | Source | Notes |
+|--------|--------|-------|
+| `sb_secret_...` | API → **Secret keys** | Recommended. Not a JWT, sent via the `apikey` header only |
+| `eyJ...` (JWT) | API → **Legacy keys** → service_role | Legacy; sent via both `apikey` and `Authorization: Bearer` |
+
+:::tip About the publishable key
+Supabase also offers `sb_publishable_...` (the new name for the `anon` key), but it **respects Row Level Security** and therefore cannot bypass policies to reach a private bucket. It does not apply to this project's server-side storage access. The replacement for `service_role` is the **secret key**, not the publishable key.
+:::
 
 :::warning
-The `service_role` key is equivalent to database superuser access. Use it **only** on the Worker side — never ship it to the client or expose it in frontend code.
+The secret key (like the legacy `service_role`) grants elevated database access. Use it **only** on the Worker side — never ship it to the client or expose it in frontend code. Supabase plans to deprecate the legacy `anon` / `service_role` keys by the end of 2026, so prefer the new secret key.
 :::
 
 ### Cloudflare Deployment Credentials
@@ -166,7 +177,7 @@ DB_NAME                    # D1 database name (optional)
 ```
 CLOUDFLARE_API_TOKEN          # Cloudflare API token
 CLOUDFLARE_ACCOUNT_ID         # Cloudflare account ID
-SUPABASE_SERVICE_ROLE_KEY     # Supabase service_role key (required when provider=supabase)
+SUPABASE_SECRET_KEY          # Supabase secret key (required when provider=supabase)
 S3_ENDPOINT                   # S3/R2 endpoint URL
 S3_ACCESS_HOST                # S3/R2 access domain
 S3_BUCKET                     # S3 bucket name
@@ -201,7 +212,7 @@ S3_SECRET_ACCESS_KEY=xxx
 # SUPABASE_URL=https://xxxx.supabase.co
 # SUPABASE_STORAGE_BUCKET=rin
 # SUPABASE_STORAGE_PUBLIC=true
-# SUPABASE_SERVICE_ROLE_KEY=xxx
+# SUPABASE_SECRET_KEY=sb_secret_xxx
 
 # Authentication (GitHub or Username/Password)
 RIN_GITHUB_CLIENT_ID=xxx

@@ -92,19 +92,25 @@ function createS3Writer(vars: Record<string, string>, folder: string) {
 function createSupabaseWriter(env: NodeJS.ProcessEnv, folder: string) {
   const baseUrl = `${(env.SUPABASE_URL || "").replace(/\/$/, "")}/storage/v1`;
   const bucket = env.SUPABASE_STORAGE_BUCKET || "";
-  const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY || "";
+  const apiKey = env.SUPABASE_SECRET_KEY || env.SUPABASE_SERVICE_ROLE_KEY || "";
 
   return async function saveFile(filename: string, data: string) {
     const key = buildCacheKey(folder, filename);
     const objectPath = `${bucket}/${encodeKeyPath(key)}`;
+
+    // 与 Worker 侧一致：只有 legacy JWT 才发 Authorization 头
+    const headers: Record<string, string> = {
+      apikey: apiKey,
+      "Content-Type": "text/html",
+      "x-upsert": "true",
+    };
+    if (apiKey.startsWith("eyJ")) {
+      headers.Authorization = `Bearer ${apiKey}`;
+    }
+
     const response = await fetch(`${baseUrl}/object/${objectPath}`, {
       method: "POST",
-      headers: {
-        apikey: serviceRoleKey,
-        Authorization: `Bearer ${serviceRoleKey}`,
-        "Content-Type": "text/html",
-        "x-upsert": "true",
-      },
+      headers,
       body: data,
     });
 
