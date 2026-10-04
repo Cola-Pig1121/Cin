@@ -7,6 +7,7 @@ import {
   getMigrationVersion,
   updateMigrationVersion,
 } from "../lib/db-migration";
+import { buildStorageVarsToml, resolveStorageConfig } from "../lib/storage-config";
 const bunExec = process.execPath;
 
 function env(name: string, defaultValue?: string, required = false) {
@@ -27,6 +28,7 @@ const WORKER_SECRET_KEYS = [
   "RIN_GITHUB_CLIENT_SECRET",
   "S3_ACCESS_KEY_ID",
   "S3_SECRET_ACCESS_KEY",
+  "SUPABASE_SERVICE_ROLE_KEY",
 ] as const;
 
 function isQueueAlreadyPresentError(stderr: string) {
@@ -151,13 +153,7 @@ export async function runCloudflareDeploy(target: "all" | "server" | "client" = 
   const workerName = renv("WORKER_NAME", "rin-server");
   const taskQueueName = env("TASK_QUEUE_NAME", env("AI_SUMMARY_QUEUE_NAME", `${workerName}-tasks`)) ?? `${workerName}-tasks`;
   const r2BucketName = env("R2_BUCKET_NAME", "");
-  const s3Endpoint = env("S3_ENDPOINT", "");
-  const s3AccessHost = env("S3_ACCESS_HOST", "");
-  const s3Bucket = env("S3_BUCKET", "");
-  const s3CacheFolder = renv("S3_CACHE_FOLDER", "cache/");
-  const s3Folder = renv("S3_FOLDER", "images/");
-  const s3Region = renv("S3_REGION", "auto");
-  const s3ForcePathStyle = env("S3_FORCE_PATH_STYLE", "false");
+  const storageConfig = resolveStorageConfig(process.env);
   const webhookUrl = env("WEBHOOK_URL", "");
   const rssTitle = env("RSS_TITLE", "");
   const rssDescription = env("RSS_DESCRIPTION", "");
@@ -169,15 +165,14 @@ export async function runCloudflareDeploy(target: "all" | "server" | "client" = 
   const rssEnable = env("RSS_ENABLE", "false");
   const frontendUrl = env("FRONTEND_URL", "");
 
-  let finalS3Endpoint = s3Endpoint;
-  let finalS3Bucket = s3Bucket;
-  let finalS3AccessHost = s3AccessHost;
-
-  if (!finalS3Endpoint || !finalS3Bucket) {
-    const r2Info = await resolveR2BucketInfo(r2BucketName || "");
-    if (r2Info) {
-      finalS3Endpoint ||= r2Info.endpoint;
-      finalS3Bucket ||= r2Info.name;
+  // Supabase 后端不需要 R2 binding，也不从 R2 推导 S3_* 参数
+  if (storageConfig.provider === "s3") {
+    if (!storageConfig.vars.S3_ENDPOINT || !storageConfig.vars.S3_BUCKET) {
+      const r2Info = await resolveR2BucketInfo(r2BucketName || "");
+      if (r2Info) {
+        storageConfig.vars.S3_ENDPOINT ||= r2Info.endpoint;
+        storageConfig.vars.S3_BUCKET ||= r2Info.name;
+      }
     }
   }
 
@@ -204,13 +199,7 @@ export async function runCloudflareDeploy(target: "all" | "server" | "client" = 
       ${buildWranglerObservabilityConfig(preview)}
 
       [vars]
-      S3_FOLDER = "${s3Folder}"
-      S3_CACHE_FOLDER="${s3CacheFolder}"
-      S3_REGION = "${s3Region}"
-      S3_ENDPOINT = "${finalS3Endpoint}"
-      S3_ACCESS_HOST = "${finalS3AccessHost}"
-      S3_BUCKET = "${finalS3Bucket}"
-      S3_FORCE_PATH_STYLE = "${s3ForcePathStyle}"
+      ${buildStorageVarsToml(storageConfig.vars)}
       WEBHOOK_URL = "${webhookUrl}"
       RSS_TITLE = "${rssTitle}"
       RSS_DESCRIPTION = "${rssDescription}"
@@ -262,7 +251,7 @@ export async function runCloudflareDeploy(target: "all" | "server" | "client" = 
 
   await $`echo ${buildWranglerQueueConfig(taskQueueName, preview)} >> wrangler.toml`.quiet();
 
-  if (r2BucketName) {
+  if (r2BucketName && storageConfig.provider !== "supabase") {
     await $`echo ${stripIndent(`
       [[r2_buckets]]
       binding = "R2_BUCKET"

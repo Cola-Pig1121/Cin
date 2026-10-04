@@ -6,6 +6,21 @@ declare global {
     R2_BUCKET?: R2Bucket;
     /** 站点公开访问地址（可选）。未设置时 sitemap/robots 回退到请求来源 origin */
     FRONTEND_URL?: string;
+
+    /**
+     * 对象存储后端选择：r2 / s3 / supabase。
+     * 留空时按配置自动探测（有 Supabase 配置 → supabase，有 R2 binding → r2，否则 s3）。
+     */
+    STORAGE_PROVIDER?: string;
+
+    /** Supabase Storage：项目地址，如 https://xxxx.supabase.co */
+    SUPABASE_URL?: string;
+    /** Supabase Storage：service_role key，拥有 RLS 豁免权。部署时作为 Worker Secret 注入 */
+    SUPABASE_SERVICE_ROLE_KEY?: string;
+    /** Supabase Storage：storage bucket 名 */
+    SUPABASE_STORAGE_BUCKET?: string;
+    /** Supabase Storage：bucket 是否为公开桶。公开桶直链由 Supabase 直接服务，否则走 /api/blob 反代 */
+    SUPABASE_STORAGE_PUBLIC?: string;
   }
 }
 

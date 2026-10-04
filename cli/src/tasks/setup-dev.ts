@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { parseEnv } from "../lib/env";
+import { buildStorageVarsToml, resolveStorageConfig } from "../lib/storage-config";
 
 export async function runSetupDev() {
   const rootDir = process.cwd();
@@ -23,16 +24,15 @@ export async function runSetupDev() {
     "RIN_GITHUB_CLIENT_SECRET",
     "JWT_SECRET",
   ];
-  const storageRequiredVars = env.R2_BUCKET_NAME
-    ? []
-    : ["S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"];
-  const requiredVars = [...baseRequiredVars, ...storageRequiredVars];
+  const storageConfig = resolveStorageConfig(env);
+  const requiredVars = [...baseRequiredVars, ...storageConfig.missing];
 
   const missingVars = requiredVars.filter((name) => !env[name]);
   if (missingVars.length > 0) {
     console.error("❌ 错误：以下必要环境变量未设置：");
     missingVars.forEach((name) => console.error(`   - ${name}`));
-    console.log("\n请编辑 .env.local 文件并添加这些配置\n");
+    console.log(`\n当前对象存储后端：${storageConfig.provider}`);
+    console.log("请编辑 .env.local 文件并添加这些配置\n");
     process.exit(1);
   }
 
@@ -51,13 +51,7 @@ not_found_handling = "single-page-application"
 crons = ["*/20 * * * *"]
 
 [vars]
-S3_FOLDER = "${env.S3_FOLDER || "images/"}"
-S3_CACHE_FOLDER = "${env.S3_CACHE_FOLDER || "cache/"}"
-S3_REGION = "${env.S3_REGION || "auto"}"
-S3_ENDPOINT = "${env.S3_ENDPOINT}"
-S3_ACCESS_HOST = "${env.S3_ACCESS_HOST || ""}"
-S3_BUCKET = "${env.S3_BUCKET}"
-S3_FORCE_PATH_STYLE = "${env.S3_FORCE_PATH_STYLE || "false"}"
+${buildStorageVarsToml(storageConfig.vars, "")}
 WEBHOOK_URL = "${env.WEBHOOK_URL || ""}"
 RSS_TITLE = "${env.RSS_TITLE || "Rin Development"}"
 RSS_DESCRIPTION = "${env.RSS_DESCRIPTION || "Development Environment"}"
@@ -78,9 +72,8 @@ queue = "${env.TASK_QUEUE_NAME || env.AI_SUMMARY_QUEUE_NAME || `${env.WORKER_NAM
 queue = "${env.TASK_QUEUE_NAME || env.AI_SUMMARY_QUEUE_NAME || `${env.WORKER_NAME || "rin-server"}-tasks`}"
 max_batch_size = 1
 max_batch_timeout = 5
-${env.R2_BUCKET_NAME
+${storageConfig.provider === "r2" && env.R2_BUCKET_NAME
   ? `
-
 [[r2_buckets]]
 binding = "R2_BUCKET"
 bucket_name = "${env.R2_BUCKET_NAME}"
@@ -98,20 +91,24 @@ PAGE_SIZE=${env.PAGE_SIZE || "5"}
 RSS_ENABLE=${env.RSS_ENABLE || "false"}
 `,
   );
+
+  const storageSecrets = Object.entries(storageConfig.secrets)
+    .map(([key, value]) => `${key}=${value}`)
+    .join("\n");
+
   fs.writeFileSync(
     path.join(rootDir, ".dev.vars"),
     `RIN_GITHUB_CLIENT_ID=${env.RIN_GITHUB_CLIENT_ID}
 RIN_GITHUB_CLIENT_SECRET=${env.RIN_GITHUB_CLIENT_SECRET}
 JWT_SECRET=${env.JWT_SECRET}
-${env.R2_BUCKET_NAME ? "" : `S3_ACCESS_KEY_ID=${env.S3_ACCESS_KEY_ID}
-S3_SECRET_ACCESS_KEY=${env.S3_SECRET_ACCESS_KEY}
-`}
+${storageSecrets}
 `,
   );
 
   console.log("✅ 已生成 wrangler.toml");
   console.log("✅ 已生成 client/.env");
   console.log("✅ 已生成 .dev.vars");
+  console.log(`ℹ️  对象存储后端：${storageConfig.provider}`);
   console.log("\n🎉 配置加载完成！");
   console.log("   现在可以运行：bun run dev\n");
 }

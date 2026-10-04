@@ -190,6 +190,23 @@ export function createMockEnv(overrides: Partial<Env> = {}): Env {
 }
 
 /**
+ * 构造一个走 Supabase Storage 后端的 mock 环境。
+ * 默认清空 S3 凭证，确保不会误落到 S3 分支。
+ */
+export function createMockSupabaseEnv(overrides: Partial<Env> = {}): Env {
+    return createMockEnv({
+        STORAGE_PROVIDER: 'supabase',
+        SUPABASE_URL: 'https://test-project.supabase.co',
+        SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
+        SUPABASE_STORAGE_BUCKET: 'test-bucket',
+        SUPABASE_STORAGE_PUBLIC: 'false',
+        S3_ACCESS_KEY_ID: '',
+        S3_SECRET_ACCESS_KEY: '',
+        ...overrides,
+    });
+}
+
+/**
  * Clean up test database
  */
 export function cleanupTestDB(sqlite: Database) {
