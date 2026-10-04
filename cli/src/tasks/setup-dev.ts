@@ -60,11 +60,11 @@ name = "${env.WORKER_NAME || "rin-server"}"
 main = "server/src/_worker.ts"
 compatibility_date = "2025-03-21"
 
-[assets]
-directory = "./dist/client"
-binding = "ASSETS"
-run_worker_first = true
-not_found_handling = "single-page-application"
+# 本地开发不声明 [assets]：
+# 前端由 Vite dev server 独立提供（dev 命令启动在 11498），
+# Worker 只负责 /api（11499）。而 assets.directory 指向的 dist/client
+# 在未执行 build 时并不存在，wrangler dev 会因此直接启动失败。
+# 生产部署的 [assets] 由 deploy-cf 生成，不受此处影响。
 
 [triggers]
 crons = ["*/20 * * * *"]
