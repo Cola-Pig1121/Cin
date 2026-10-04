@@ -3,6 +3,32 @@ import * as path from "node:path";
 import { parseEnv } from "../lib/env";
 import { buildStorageVarsToml, resolveStorageConfig } from "../lib/storage-config";
 
+/**
+ * 校验必填项。
+ *
+ * 与服务端实际行为保持一致：
+ * - NAME / JWT_SECRET 必填
+ * -登录方式二选一：GitHub OAuth 或账号密码，两组都为空才报错
+ *   （见 server/src/services/config-health.ts 的 githubReady || passwordReady）
+ * - AVATAR 可为空（site.avatar 默认值为空串，见 packages/config）
+ */
+export function getRequiredVars(env: Record<string, string | undefined>) {
+  const required: string[] = ["NAME", "JWT_SECRET"];
+
+  const githubReady = Boolean(env.RIN_GITHUB_CLIENT_ID && env.RIN_GITHUB_CLIENT_SECRET);
+  const passwordReady = Boolean(env.ADMIN_USERNAME && env.ADMIN_PASSWORD);
+  if (!githubReady && !passwordReady) {
+    required.push(
+      "RIN_GITHUB_CLIENT_ID + RIN_GITHUB_CLIENT_SECRET",
+      "或 ADMIN_USERNAME + ADMIN_PASSWORD",
+    );
+  }
+
+  required.push(...resolveStorageConfig(env).missing);
+
+  return required;
+}
+
 export async function runSetupDev() {
   const rootDir = process.cwd();
   const envFile = path.join(rootDir, ".env.local");
@@ -17,15 +43,8 @@ export async function runSetupDev() {
   }
 
   const env = parseEnv(fs.readFileSync(envFile, "utf-8"));
-  const baseRequiredVars = [
-    "NAME",
-    "AVATAR",
-    "RIN_GITHUB_CLIENT_ID",
-    "RIN_GITHUB_CLIENT_SECRET",
-    "JWT_SECRET",
-  ];
   const storageConfig = resolveStorageConfig(env);
-  const requiredVars = [...baseRequiredVars, ...storageConfig.missing];
+  const requiredVars = getRequiredVars(env);
 
   const missingVars = requiredVars.filter((name) => !env[name]);
   if (missingVars.length > 0) {
