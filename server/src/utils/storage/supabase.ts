@@ -181,8 +181,10 @@ function encodeBucketPath(bucket: string, storageKey: string) {
 
 /**
  * Supabase 对缺失对象的响应有两套形态：
- * REST 端点返回 404，S3 兼容端点返回 400 + errorCode=NoSuchKey。
- * 这里两种都归一成「不存在」。
+ * - REST 端点（POST /object/... 与 GET /object/...）返回 400，
+ *   body 为 { statusCode: "404", error: "not_found", code: "NoSuchKey" }
+ * - 部分路径返回 404
+ * 这里都归一成「不存在」，避免把正常的「文件还没上传」当成服务端故障抛错。
  */
 async function isNotFound(response: Response) {
     if (response.status === 404) {
@@ -193,7 +195,7 @@ async function isNotFound(response: Response) {
         return false;
     }
 
-    // HEAD 响应没有 body 可读，只能保守地当作「存在」处理。
+    // HEAD 响应通常没有 body 可读，只能保守地当作「存在」处理。
     const contentType = response.headers.get("Content-Type") || "";
     if (!contentType.includes("json")) {
         return false;
@@ -201,8 +203,16 @@ async function isNotFound(response: Response) {
 
     try {
         const body = (await response.clone().json()) as any;
-        const code = body?.errorCode || body?.error_code;
-        return code === "NoSuchKey" || code === "not_found";
+        // REST 端点用 code，个别路径用 errorCode / error_code，三者都认。
+        const code = body?.code || body?.errorCode || body?.error_code;
+        const status = body?.statusCode;
+        return (
+            code === "NoSuchKey" ||
+            code === "not_found" ||
+            body?.error === "not_found" ||
+            status === "404" ||
+            status === 404
+        );
     } catch {
         return false;
     }

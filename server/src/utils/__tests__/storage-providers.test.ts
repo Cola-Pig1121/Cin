@@ -298,6 +298,40 @@ describe("SupabaseObjectStorage", () => {
         expect(await storage.get("images/missing.png")).toBeNull();
     });
 
+    it("treats the REST endpoint's 400 body as a missing object", async () => {
+        // Supabase REST 端点实际返回 { statusCode: "404", error: "not_found", code: "NoSuchKey" }
+        // 字段名是 code 而非 errorCode，漏判会让「文件不存在」变成 500。
+        mockFetch(
+            () =>
+                new Response(
+                    JSON.stringify({
+                        statusCode: "404",
+                        error: "not_found",
+                        message: "Object not found",
+                        code: "NoSuchKey",
+                    }),
+                    { status: 400, headers: { "Content-Type": "application/json" } },
+                ),
+        );
+        const storage = createSupabaseObjectStorage(createMockSupabaseEnv());
+
+        expect(await storage.get("favicon.ico")).toBeNull();
+        expect(await storage.head("favicon.ico")).toBeNull();
+    });
+
+    it("still throws for a genuine 400 error", async () => {
+        mockFetch(
+            () =>
+                new Response(JSON.stringify({ code: "InvalidRequest", message: "bad bucket" }), {
+                    status: 400,
+                    headers: { "Content-Type": "application/json" },
+                }),
+        );
+        const storage = createSupabaseObjectStorage(createMockSupabaseEnv());
+
+        expect(storage.get("images/a.png")).rejects.toThrow(/Failed to fetch storage object: 400/);
+    });
+
     it("throws on non-404 error responses", async () => {
         mockFetch(() => new Response("boom", { status: 500 }));
         const storage = createSupabaseObjectStorage(createMockSupabaseEnv());
