@@ -1,6 +1,33 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { parseEnv } from "../lib/env";
+import { buildStorageVarsToml, resolveStorageConfig } from "../lib/storage-config";
+
+/**
+ * 校验必填项。
+ *
+ * 与服务端实际行为保持一致：
+ * - NAME / JWT_SECRET 必填
+ * -登录方式二选一：GitHub OAuth 或账号密码，两组都为空才报错
+ *   （见 server/src/services/config-health.ts 的 githubReady || passwordReady）
+ * - AVATAR 可为空（site.avatar 默认值为空串，见 packages/config）
+ */
+export function getRequiredVars(env: Record<string, string | undefined>) {
+  const required: string[] = ["NAME", "JWT_SECRET"];
+
+  const githubReady = Boolean(env.RIN_GITHUB_CLIENT_ID && env.RIN_GITHUB_CLIENT_SECRET);
+  const passwordReady = Boolean(env.ADMIN_USERNAME && env.ADMIN_PASSWORD);
+  if (!githubReady && !passwordReady) {
+    required.push(
+      "RIN_GITHUB_CLIENT_ID + RIN_GITHUB_CLIENT_SECRET",
+      "或 ADMIN_USERNAME + ADMIN_PASSWORD",
+    );
+  }
+
+  required.push(...resolveStorageConfig(env).missing);
+
+  return required;
+}
 
 export async function runSetupDev() {
   const rootDir = process.cwd();
@@ -16,23 +43,15 @@ export async function runSetupDev() {
   }
 
   const env = parseEnv(fs.readFileSync(envFile, "utf-8"));
-  const baseRequiredVars = [
-    "NAME",
-    "AVATAR",
-    "RIN_GITHUB_CLIENT_ID",
-    "RIN_GITHUB_CLIENT_SECRET",
-    "JWT_SECRET",
-  ];
-  const storageRequiredVars = env.R2_BUCKET_NAME
-    ? []
-    : ["S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"];
-  const requiredVars = [...baseRequiredVars, ...storageRequiredVars];
+  const storageConfig = resolveStorageConfig(env);
+  const requiredVars = getRequiredVars(env);
 
   const missingVars = requiredVars.filter((name) => !env[name]);
   if (missingVars.length > 0) {
     console.error("❌ 错误：以下必要环境变量未设置：");
     missingVars.forEach((name) => console.error(`   - ${name}`));
-    console.log("\n请编辑 .env.local 文件并添加这些配置\n");
+    console.log(`\n当前对象存储后端：${storageConfig.provider}`);
+    console.log("请编辑 .env.local 文件并添加这些配置\n");
     process.exit(1);
   }
 
@@ -41,23 +60,17 @@ name = "${env.WORKER_NAME || "rin-server"}"
 main = "server/src/_worker.ts"
 compatibility_date = "2025-03-21"
 
-[assets]
-directory = "./dist/client"
-binding = "ASSETS"
-run_worker_first = true
-not_found_handling = "single-page-application"
+# 本地开发不声明 [assets]：
+# 前端由 Vite dev server 独立提供（dev 命令启动在 11498），
+# Worker 只负责 /api（11499）。而 assets.directory 指向的 dist/client
+# 在未执行 build 时并不存在，wrangler dev 会因此直接启动失败。
+# 生产部署的 [assets] 由 deploy-cf 生成，不受此处影响。
 
 [triggers]
 crons = ["*/20 * * * *"]
 
 [vars]
-S3_FOLDER = "${env.S3_FOLDER || "images/"}"
-S3_CACHE_FOLDER = "${env.S3_CACHE_FOLDER || "cache/"}"
-S3_REGION = "${env.S3_REGION || "auto"}"
-S3_ENDPOINT = "${env.S3_ENDPOINT}"
-S3_ACCESS_HOST = "${env.S3_ACCESS_HOST || ""}"
-S3_BUCKET = "${env.S3_BUCKET}"
-S3_FORCE_PATH_STYLE = "${env.S3_FORCE_PATH_STYLE || "false"}"
+${buildStorageVarsToml(storageConfig.vars, "")}
 WEBHOOK_URL = "${env.WEBHOOK_URL || ""}"
 RSS_TITLE = "${env.RSS_TITLE || "Rin Development"}"
 RSS_DESCRIPTION = "${env.RSS_DESCRIPTION || "Development Environment"}"
@@ -78,9 +91,8 @@ queue = "${env.TASK_QUEUE_NAME || env.AI_SUMMARY_QUEUE_NAME || `${env.WORKER_NAM
 queue = "${env.TASK_QUEUE_NAME || env.AI_SUMMARY_QUEUE_NAME || `${env.WORKER_NAME || "rin-server"}-tasks`}"
 max_batch_size = 1
 max_batch_timeout = 5
-${env.R2_BUCKET_NAME
+${storageConfig.provider === "r2" && env.R2_BUCKET_NAME
   ? `
-
 [[r2_buckets]]
 binding = "R2_BUCKET"
 bucket_name = "${env.R2_BUCKET_NAME}"
@@ -98,20 +110,24 @@ PAGE_SIZE=${env.PAGE_SIZE || "5"}
 RSS_ENABLE=${env.RSS_ENABLE || "false"}
 `,
   );
+
+  const storageSecrets = Object.entries(storageConfig.secrets)
+    .map(([key, value]) => `${key}=${value}`)
+    .join("\n");
+
   fs.writeFileSync(
     path.join(rootDir, ".dev.vars"),
     `RIN_GITHUB_CLIENT_ID=${env.RIN_GITHUB_CLIENT_ID}
 RIN_GITHUB_CLIENT_SECRET=${env.RIN_GITHUB_CLIENT_SECRET}
 JWT_SECRET=${env.JWT_SECRET}
-${env.R2_BUCKET_NAME ? "" : `S3_ACCESS_KEY_ID=${env.S3_ACCESS_KEY_ID}
-S3_SECRET_ACCESS_KEY=${env.S3_SECRET_ACCESS_KEY}
-`}
+${storageSecrets}
 `,
   );
 
   console.log("✅ 已生成 wrangler.toml");
   console.log("✅ 已生成 client/.env");
   console.log("✅ 已生成 .dev.vars");
+  console.log(`ℹ️  对象存储后端：${storageConfig.provider}`);
   console.log("\n🎉 配置加载完成！");
   console.log("   现在可以运行：bun run dev\n");
 }

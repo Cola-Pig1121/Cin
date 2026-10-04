@@ -39,3 +39,6 @@ dist-ssr
 
 # Bun
 .bun/*
+
+# WorkBuddy local agent state (session memory, not product code)
+.workbuddy/
