@@ -28,6 +28,7 @@
     "db:generate": "bun --filter './server' db:gen",
     "db:fix": "bun cli/bin/rin.ts db fix-top-field",
     "check": "turbo check",
+    "check:mail-gateway": "tsc --noEmit -p docs/tsconfig.mail-gateway.json",
     "deploy": "bun cli/bin/rin.ts deploy",
     "build": "bun run build:client && bun run build:server",
     "build:all": "turbo build",

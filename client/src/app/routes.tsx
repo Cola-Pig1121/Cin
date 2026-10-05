@@ -12,6 +12,8 @@ import useTableOfContents from "../hooks/useTableOfContents";
 import { useSiteConfig } from "../hooks/useSiteConfig";
 import { CallbackPage } from "../page/callback";
 import { CompatTasksPage } from "../page/compat-tasks";
+import { AdminUsersPage } from "../page/admin-users";
+import { CommentModerationPage } from "../page/comment-moderation";
 import { ErrorPage } from "../page/error";
 import { FeedPage, TOCHeader } from "../page/feed";
 import { FeedsPage } from "../page/feeds";
@@ -23,6 +25,7 @@ import { LoginPage } from "../page/login";
 import { MomentsPage } from "../page/moments";
 import { ProfilePage } from "../page/profile";
 import { QueueStatusPage } from "../page/queue-status";
+import { RegisterPage } from "../page/register";
 import { SearchPage } from "../page/search";
 import { Settings } from "../page/settings";
 import { TimelinePage } from "../page/timeline";
@@ -72,6 +75,14 @@ export function AppRoutes() {
         <HealthPage />
       </AdminRoute>
 
+      <AdminRoute path="/admin/comments" requirePermission title={t("moderation.title")} description={t("admin.comments_description")}>
+        <CommentModerationPage />
+      </AdminRoute>
+
+      <AdminRoute path="/admin/users" requirePermission title={t("admin_users.title")} description={t("admin.users_description")}>
+        <AdminUsersPage />
+      </AdminRoute>
+
       <AdminRoute path="/admin/queue-status" requirePermission title={t("queue_status.title")} description={t("admin.queue_status_description")}>
         <QueueStatusPage />
       </AdminRoute>
@@ -94,6 +105,10 @@ export function AppRoutes() {
 
       <AppRoute path="/login">
         <LoginPage />
+      </AppRoute>
+
+      <AppRoute path="/register">
+        <RegisterPage />
       </AppRoute>
 
       <AppRoute path="/profile">

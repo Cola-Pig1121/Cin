@@ -10,7 +10,9 @@
     "queue_status_description": "AI 要約キューの進行状況、最近のタスク結果、失敗内容を確認します。",
     "settings_description": "サイトの挙動、連携設定、公開ルールを一か所で管理します。",
     "title": "管理画面",
-    "writing_description": "非公開の管理ワークスペースから記事を作成、編集、公開します。"
+    "writing_description": "非公開の管理ワークスペースから記事を作成、編集、公開します。",
+    "comments_description": "ゲストコメントを審査",
+    "users_description": "登録ユーザーと権限の管理"
   },
   "compat_tasks": {
     "title": "互換タスク",
@@ -103,7 +105,10 @@
     "guest_name_required": "ゲスト名は必須です",
     "guest_name_placeholder": "名前（必須）",
     "guest_email_placeholder": "メール（任意）",
-    "guest_website_placeholder": "ウェブサイト（任意）"
+    "guest_website_placeholder": "ウェブサイト（任意）",
+    "submitting": "送信中…",
+    "pending_review": "コメントは送信されました。管理者の承認後に表示されます。",
+    "captcha_required": "先に認証を完了してください"
   },
   "comparison": "対比",
   "confirm": "確認",
@@ -745,5 +750,135 @@
   "sort_latest": "新着",
   "sort_popular": "人気",
   "total_tags": "全 {{count}} 個のタグ",
-  "anonymous": "匿名"
+  "anonymous": "匿名",
+  "apiError": {
+    "unknown": "エラーが発生しました。もう一度お試しください。",
+    "COMMENT_VALIDATION_FAILED": "コメントの形式が正しくありません",
+    "COMMENT_CONTENT_REQUIRED": "コメント内容を入力してください",
+    "COMMENT_CONTENT_TOO_LONG": "コメントが長すぎます",
+    "COMMENT_FEED_NOT_FOUND": "記事が見つかりません",
+    "COMMENT_GUEST_NAME_REQUIRED": "名前を入力してください",
+    "COMMENT_GUEST_DISABLED": "ゲストコメントは無効です。ログインしてください。",
+    "COMMENT_DISABLED": "コメント機能は無効です",
+    "CAPTCHA_FAILED": "認証に失敗しました。もう一度お試しください。",
+    "CAPTCHA_REQUIRED": "先に認証を完了してください",
+    "LOGIN_REQUIRED": "ログインしてください",
+    "COMMENT_PERMISSION_DENIED": "このコメントを削除する権限がありません",
+    "COMMENT_NOT_FOUND": "コメントが見つかりません",
+    "RATE_LIMITED": "操作が頻繁すぎます。しばらくお待ちください。",
+    "AUTH_INVALID_CREDENTIALS": "ユーザー名またはパスワードが違います",
+    "AUTH_CREDENTIALS_REQUIRED": "ユーザー名とパスワードを入力してください",
+    "AUTH_LOGIN_REQUIRED": "ログインしてください",
+    "AUTH_EMAIL_TAKEN": "このメールアドレスは既に登録されています",
+    "AUTH_USERNAME_TAKEN": "このユーザー名は既に使われています",
+    "AUTH_EMAIL_INVALID": "メールアドレスの形式が正しくありません",
+    "AUTH_CODE_INVALID": "確認コードが誤っているか、有効期限が切れています",
+    "AUTH_CODE_TOO_FREQUENT": "リクエストが多すぎます。しばらくお待ちください。",
+    "AUTH_PASSWORD_WEAK": "パスワードは8文字以上にしてください",
+    "AUTH_REGISTER_DISABLED": "新規登録は利用できません",
+    "AUTH_SMTP_NOT_CONFIGURED": "メールサービスが未設定です",
+    "AUTH_EMAIL_SEND_FAILED": "確認メールの送信に失敗しました。後でもう一度お試しください。"
+  },
+  "register": {
+    "title": "アカウント登録",
+    "entry": "アカウントをお持ちでない方はメールで登録",
+    "email": {
+      "placeholder": "メールアドレス"
+    },
+    "username": {
+      "placeholder": "ユーザー名"
+    },
+    "password": {
+      "placeholder": "パスワード（8文字以上）"
+    },
+    "code": {
+      "placeholder": "6桁の確認コード"
+    },
+    "request_code": "コードを送信",
+    "verify": "登録を完了",
+    "sending": "送信中…",
+    "verifying": "確認中…",
+    "code_sent": "コードを送信しました。メールをご確認ください。",
+    "code_sent_to": "{{email}} にコードを送信しました。メールをご確認ください。",
+    "resend_in": "{{seconds}} 秒後に再取得できます",
+    "change_email": "別のメールを使う",
+    "back_to_login": "ログインに戻る",
+    "error": {
+      "empty": "メール・ユーザー名・パスワードを入力してください",
+      "network": "ネットワークエラーです。もう一度お試しください。",
+      "code_length": "6桁のコードを入力してください",
+      "captcha_required": "先に認証を完了してください",
+      "captcha_broken": "認証ウィジェットを読み込めませんでした。ページを再読み込みしてください。",
+      "captcha_config_failed": "認証の設定を読み込めませんでした。再読み込みしてください。"
+    },
+    "loading_captcha": "認証を読み込んでいます…"
+  },
+  "moderation": {
+    "title": "コメント審査",
+    "count": "承認待ち {{count}} 件",
+    "empty": "承認待ちのコメントはありません",
+    "on_feed": "「{{title}}」へのコメント",
+    "approve": {
+      "action": "承認",
+      "title": "コメントを承認",
+      "confirm": "このコメントは全体に公開されます。続行しますか？"
+    },
+    "reject": {
+      "action": "却下",
+      "title": "コメントを却下",
+      "confirm": "このコメントは公開されません。続行しますか？"
+    },
+    "filter": {
+      "pending": "承認待ち",
+      "approved": "承認済み",
+      "all": "すべて"
+    },
+    "badge": {
+      "pending": "承認待ち",
+      "approved": "公開中"
+    },
+    "empty_approved": "公開済みのコメントはありません",
+    "empty_all": "コメントがありません",
+    "view": "表示",
+    "pagination": {
+      "prev": "前へ",
+      "next": "次へ",
+      "status": "{{page}} / {{totalPages}} ページ"
+    },
+    "delete": {
+      "action": "削除",
+      "title": "コメントを削除",
+      "confirm": "このコメントは完全に削除されます。元に戻せません。続行しますか？"
+    }
+  },
+  "admin_users": {
+    "title": "ユーザー管理",
+    "total": "合計 {{total}} 人のユーザー",
+    "search": {
+      "placeholder": "ユーザー名 / メール / ID を検索",
+      "action": "検索",
+      "clear": "クリア"
+    },
+    "empty": "ユーザーがまだいません",
+    "empty_filtered": "該当するユーザーがいません",
+    "badge": {
+      "admin": "管理者",
+      "email": "メール登録",
+      "unverified": "未認証"
+    },
+    "action": {
+      "promote": "管理者にする",
+      "demote": "管理者権限を解除",
+      "delete": "削除"
+    },
+    "delete": {
+      "title": "ユーザーを削除",
+      "confirm": "「{{username}}」とそのすべてのコメントを完全に削除します。元に戻せません。続行しますか？"
+    },
+    "pagination": {
+      "prev": "前へ",
+      "next": "次へ",
+      "status": "{{page}} / {{totalPages}} ページ"
+    }
+  }
 }

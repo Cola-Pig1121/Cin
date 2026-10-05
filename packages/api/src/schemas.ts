@@ -42,9 +42,23 @@ export const feedSetTopSchema = t.Object({
 // Auth Schemas
 // ============================================================================
 
+/** 密码长度下限，与服务端 AUTH_PASSWORD_MIN_LENGTH 保持一致 */
+export const AUTH_PASSWORD_MIN_LENGTH = 8;
+/** 用户名长度上限 */
+export const AUTH_USERNAME_MAX_LENGTH = 32;
+/** 验证码长度 */
+export const AUTH_CODE_LENGTH = 6;
+
 export const loginSchema = t.Object({
-  username: t.String(),
-  password: t.String(),
+  username: t.String({ minLength: 1, maxLength: AUTH_USERNAME_MAX_LENGTH }),
+  password: t.String({ minLength: 1, maxLength: 128 }),
+});
+
+export const registerRequestSchema = t.Object({
+  email: t.String({ minLength: 3, maxLength: 254, format: 'email' }),
+  username: t.String({ minLength: 1, maxLength: AUTH_USERNAME_MAX_LENGTH }),
+  password: t.String({ minLength: AUTH_PASSWORD_MIN_LENGTH, maxLength: 128 }),
+  captchaToken: t.String({ optional: true, maxLength: 2048 }),
 });
 
 // ============================================================================
@@ -60,12 +74,28 @@ export const updateProfileSchema = t.Object({
 // Comment Schemas
 // ============================================================================
 
+/** 评论内容长度上限，与服务端 COMMENT_CONTENT_MAX_LENGTH 保持一致 */
+export const COMMENT_CONTENT_MAX_LENGTH = 2000;
+/** 游客昵称长度上限 */
+export const COMMENT_GUEST_NAME_MAX_LENGTH = 50;
+
 export const commentCreateSchema = t.Object({
-  content: t.String(),
-  guestName: t.String({ optional: true }),
-  guestEmail: t.String({ optional: true }),
-  guestWebsite: t.String({ optional: true }),
+  content: t.String({ minLength: 1, maxLength: COMMENT_CONTENT_MAX_LENGTH }),
+  guestName: t.String({ optional: true, maxLength: COMMENT_GUEST_NAME_MAX_LENGTH }),
+  guestEmail: t.String({ optional: true, format: 'email' }),
+  guestWebsite: t.String({ optional: true, maxLength: 200 }),
+  captchaToken: t.String({ optional: true, maxLength: 2048 }),
 });
+
+export const commentModerationSchema = t.Object({
+  approved: t.Boolean(),
+});
+
+export const registerVerifySchema = t.Object({
+  email: t.String({ minLength: 3, maxLength: 254, format: 'email' }),
+  code: t.String({ minLength: AUTH_CODE_LENGTH, maxLength: AUTH_CODE_LENGTH }),
+});
+
 
 // ============================================================================
 // Friend Schemas

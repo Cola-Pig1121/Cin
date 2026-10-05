@@ -209,6 +209,64 @@ export class ServiceUnavailableError extends AppError {
 }
 
 // ============================================================================
+// Business Error
+// ============================================================================
+
+/**
+ * 携带 `@rin/api` 共享业务错误码的错误。
+ *
+ * 与 `AppError` 的分工：
+ * - `AppError` 面向传输层语义（404 / 403 / 500），code 取自本文件的 ErrorCode 联合类型。
+ * - `BusinessError` 面向业务语义，code 取自 `packages/api` 的 COMMENT_ERROR_CODES /
+ *   AUTH_ERROR_CODES，供前端做稳定分支与 i18n 映射，不依赖 message 文案。
+ *
+ * 两者都可以被 `isAppError` 识别，因此全局错误处理器无需改动。
+ */
+export class BusinessError extends AppError {
+  constructor(
+    code: string,
+    message: string,
+    statusCode: number = 400,
+    details?: ErrorDetail[],
+  ) {
+    // ErrorCode 联合类型覆盖不到 packages/api 的业务码，这里显式扩展。
+    super(code as ErrorCode, message, statusCode, details);
+  }
+}
+
+/**
+ * 业务错误快捷构造器。
+ *
+ * @example
+ *   throw bizError(COMMENT_ERROR_CODES.COMMENT_CONTENT_REQUIRED, 'Content is required');
+ */
+export function bizError(
+  code: string,
+  message: string,
+  statusCode = 400,
+  details?: ErrorDetail[],
+): BusinessError {
+  return new BusinessError(code, message, statusCode, details);
+}
+
+/**
+ * 把 schema 校验结果转成 BusinessError。
+ * 前端据此拿到 issues，可以精确定位到出错字段。
+ */
+export function validationErrorFromIssues(
+  code: string,
+  message: string,
+  issues: { path: string; message: string }[],
+): BusinessError {
+  return new BusinessError(
+    code,
+    message,
+    400,
+    issues.map((issue) => ({ field: issue.path, message: issue.message })),
+  );
+}
+
+// ============================================================================
 // Error Utilities
 // ============================================================================
 

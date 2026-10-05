@@ -334,7 +334,8 @@ describe('API Client', () => {
     })
 
     it('should check auth status', async () => {
-      const mockResponse = { github: true, password: true }
+      // register 字段由服务端根据 SMTP 配置完整性下发
+      const mockResponse = { github: true, password: true, register: false }
 
       mockFetch.mockResolvedValueOnce(createMockResponse({
         ok: true,

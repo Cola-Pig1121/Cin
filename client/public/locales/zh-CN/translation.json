@@ -10,7 +10,9 @@
     "queue_status_description": "查看 AI 摘要队列进度、最近任务结果和失败信息。",
     "settings_description": "在统一的后台空间中管理站点行为、集成配置和发布规则。",
     "title": "后台管理",
-    "writing_description": "在独立的管理工作区中编写、编辑和发布内容。"
+    "writing_description": "在独立的管理工作区中编写、编辑和发布内容。",
+    "comments_description": "审核游客评论",
+    "users_description": "管理注册用户与权限"
   },
   "compat_tasks": {
     "title": "兼容任务",
@@ -103,7 +105,10 @@
     "guest_name_required": "昵称不能为空",
     "guest_name_placeholder": "昵称（必填）",
     "guest_email_placeholder": "邮箱（可选）",
-    "guest_website_placeholder": "网站（可选）"
+    "guest_website_placeholder": "网站（可选）",
+    "submitting": "提交中…",
+    "pending_review": "评论已提交，等待管理员审核后展示",
+    "captcha_required": "请先完成人机验证"
   },
   "comparison": "对比",
   "confirm": "确认",
@@ -754,5 +759,135 @@
   "sort_latest": "最新",
   "sort_popular": "热门",
   "total_tags": "共 {{count}} 个标签",
-  "anonymous": "匿名"
+  "anonymous": "匿名",
+  "apiError": {
+    "unknown": "操作失败，请稍后重试",
+    "COMMENT_VALIDATION_FAILED": "评论内容格式不正确",
+    "COMMENT_CONTENT_REQUIRED": "评论内容不能为空",
+    "COMMENT_CONTENT_TOO_LONG": "评论内容太长了",
+    "COMMENT_FEED_NOT_FOUND": "文章不存在或已被删除",
+    "COMMENT_GUEST_NAME_REQUIRED": "请填写昵称",
+    "COMMENT_GUEST_DISABLED": "游客评论已关闭，请登录后发表评论",
+    "COMMENT_DISABLED": "评论功能已关闭",
+    "CAPTCHA_FAILED": "人机验证失败，请重试",
+    "CAPTCHA_REQUIRED": "请先完成人机验证",
+    "LOGIN_REQUIRED": "请先登录",
+    "COMMENT_PERMISSION_DENIED": "没有权限删除这条评论",
+    "COMMENT_NOT_FOUND": "评论不存在",
+    "RATE_LIMITED": "操作太频繁，请稍后再试",
+    "AUTH_INVALID_CREDENTIALS": "用户名或密码错误",
+    "AUTH_CREDENTIALS_REQUIRED": "请输入用户名和密码",
+    "AUTH_LOGIN_REQUIRED": "请先登录",
+    "AUTH_EMAIL_TAKEN": "该邮箱已被注册",
+    "AUTH_USERNAME_TAKEN": "该用户名已被占用",
+    "AUTH_EMAIL_INVALID": "邮箱格式不正确",
+    "AUTH_CODE_INVALID": "验证码错误或已过期",
+    "AUTH_CODE_TOO_FREQUENT": "请求过于频繁，请稍后再试",
+    "AUTH_PASSWORD_WEAK": "密码强度不足，至少需要 8 位",
+    "AUTH_REGISTER_DISABLED": "注册功能未开放",
+    "AUTH_SMTP_NOT_CONFIGURED": "邮件服务未配置",
+    "AUTH_EMAIL_SEND_FAILED": "验证码邮件发送失败，请稍后重试"
+  },
+  "register": {
+    "title": "注册账户",
+    "entry": "还没有账户？使用邮箱注册",
+    "email": {
+      "placeholder": "邮箱"
+    },
+    "username": {
+      "placeholder": "用户名"
+    },
+    "password": {
+      "placeholder": "密码（至少 8 位）"
+    },
+    "code": {
+      "placeholder": "6 位验证码"
+    },
+    "request_code": "发送验证码",
+    "verify": "完成注册",
+    "sending": "发送中…",
+    "verifying": "验证中…",
+    "code_sent": "验证码已发送，请查收邮件",
+    "code_sent_to": "验证码已发送至 {{email}}，请查收邮件",
+    "resend_in": "{{seconds}} 秒后可重新获取",
+    "change_email": "换个邮箱",
+    "back_to_login": "返回登录",
+    "error": {
+      "empty": "请填写邮箱、用户名和密码",
+      "network": "网络错误，请重试",
+      "code_length": "请输入 6 位验证码",
+      "captcha_required": "请先完成人机验证",
+      "captcha_broken": "人机验证组件加载失败，请刷新页面后重试",
+      "captcha_config_failed": "人机验证配置加载失败，请刷新页面后重试"
+    },
+    "loading_captcha": "正在加载人机验证…"
+  },
+  "moderation": {
+    "title": "评论审核",
+    "count": "待审核 {{count}} 条",
+    "empty": "没有待审核的评论",
+    "on_feed": "评论于《{{title}}》",
+    "approve": {
+      "action": "通过",
+      "title": "通过评论",
+      "confirm": "通过后该评论将对所有人可见，确认继续？"
+    },
+    "reject": {
+      "action": "驳回",
+      "title": "驳回评论",
+      "confirm": "驳回后该评论不会公开展示，确认继续？"
+    },
+    "filter": {
+      "pending": "待审核",
+      "approved": "已通过",
+      "all": "全部"
+    },
+    "badge": {
+      "pending": "待审核",
+      "approved": "已公开"
+    },
+    "empty_approved": "还没有已公开的评论",
+    "empty_all": "没有任何评论",
+    "view": "查看",
+    "pagination": {
+      "prev": "上一页",
+      "next": "下一页",
+      "status": "第 {{page}} / {{totalPages}} 页"
+    },
+    "delete": {
+      "action": "删除",
+      "title": "删除评论",
+      "confirm": "将永久删除这条评论，此操作不可撤销。确认继续？"
+    }
+  },
+  "admin_users": {
+    "title": "用户管理",
+    "total": "共 {{total}} 位用户",
+    "search": {
+      "placeholder": "搜索用户名 / 邮箱 / ID",
+      "action": "搜索",
+      "clear": "清除"
+    },
+    "empty": "还没有任何用户",
+    "empty_filtered": "没有匹配的用户",
+    "badge": {
+      "admin": "管理员",
+      "email": "邮箱注册",
+      "unverified": "邮箱未验证"
+    },
+    "action": {
+      "promote": "设为管理员",
+      "demote": "取消管理员",
+      "delete": "删除"
+    },
+    "delete": {
+      "title": "删除用户",
+      "confirm": "将永久删除「{{username}}」及其全部评论，此操作不可撤销。确认继续？"
+    },
+    "pagination": {
+      "prev": "上一页",
+      "next": "下一页",
+      "status": "第 {{page}} / {{totalPages}} 页"
+    }
+  }
 }

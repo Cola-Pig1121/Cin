@@ -115,11 +115,38 @@ RSS_ENABLE=${env.RSS_ENABLE || "false"}
     .map(([key, value]) => `${key}=${value}`)
     .join("\n");
 
+  // 人机验证与邮件注册都是可选功能：未配置时留空即可，
+  // 服务端会据此把对应能力判定为关闭，而不是进入半可用状态。
+  const optionalVars = [
+    ["TURNSTILE_SITE_KEY", env.TURNSTILE_SITE_KEY],
+    ["TURNSTILE_SECRET_KEY", env.TURNSTILE_SECRET_KEY],
+    ["TURNSTILE_ENABLED", env.TURNSTILE_ENABLED],
+    // 邮件 Provider：smtp | resend | custom，留空自动探测
+    ["MAIL_PROVIDER", env.MAIL_PROVIDER],
+    ["SMTP_HOST", env.SMTP_HOST],
+    ["SMTP_PORT", env.SMTP_PORT],
+    ["SMTP_USERNAME", env.SMTP_USERNAME],
+    ["SMTP_PASSWORD", env.SMTP_PASSWORD],
+    ["SMTP_FROM", env.SMTP_FROM],
+    ["RESEND_API_KEY", env.RESEND_API_KEY],
+    ["RESEND_ENDPOINT", env.RESEND_ENDPOINT],
+    ["MAIL_GATEWAY_ENDPOINT", env.MAIL_GATEWAY_ENDPOINT],
+    ["MAIL_GATEWAY_TOKEN", env.MAIL_GATEWAY_TOKEN],
+    ["MAIL_GATEWAY_AUTH_HEADER", env.MAIL_GATEWAY_AUTH_HEADER],
+    ["MAIL_GATEWAY_AUTH_TEMPLATE", env.MAIL_GATEWAY_AUTH_TEMPLATE],
+    ["MAIL_JWT_SECRET", env.MAIL_JWT_SECRET],
+    ["MAIL_FROM", env.MAIL_FROM],
+    ["MAIL_TIMEOUT_MS", env.MAIL_TIMEOUT_MS],
+  ]
+    .map(([key, value]) => `${key}=${value || ""}`)
+    .join("\n");
+
   fs.writeFileSync(
     path.join(rootDir, ".dev.vars"),
     `RIN_GITHUB_CLIENT_ID=${env.RIN_GITHUB_CLIENT_ID}
 RIN_GITHUB_CLIENT_SECRET=${env.RIN_GITHUB_CLIENT_SECRET}
 JWT_SECRET=${env.JWT_SECRET}
+${optionalVars}
 ${storageSecrets}
 `,
   );

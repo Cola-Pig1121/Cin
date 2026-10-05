@@ -7,6 +7,7 @@ import { eq } from 'drizzle-orm';
 import * as schema from '../../src/db/schema';
 import type { Variables, JWTUtils, OAuth2Utils, CacheImpl } from '../../src/core/hono-types';
 import { profileAsync } from '../../src/core/server-timing';
+import { registerErrorHandlers } from '../../src/core/error-response';
 import { users } from '../../src/db/schema';
 
 /**
@@ -32,6 +33,8 @@ export function createMockDB() {
             openid TEXT NOT NULL,
             password TEXT,
             permission INTEGER DEFAULT 0,
+            email TEXT DEFAULT '',
+            email_verified INTEGER DEFAULT 0 NOT NULL,
             created_at INTEGER DEFAULT (unixepoch()),
             updated_at INTEGER DEFAULT (unixepoch())
         );
@@ -154,6 +157,9 @@ export function createMockDB() {
 
         CREATE INDEX IF NOT EXISTS idx_cache_type ON cache(type);
         CREATE INDEX IF NOT EXISTS idx_cache_key ON cache(key);
+
+        -- 邮箱唯一性只对非空邮箱生效，与 0013.sql 的部分唯一索引保持一致
+        CREATE UNIQUE INDEX IF NOT EXISTS users_email_unique ON users (email) WHERE email <> '';
     `);
 
     return { db, sqlite };
@@ -415,6 +421,11 @@ export async function setupTestApp(
 
     // Mount service
     app.route('/', serviceFactory());
+
+    // 必须挂载与生产环境相同的错误处理器：服务层现在用 `bizError` 抛出带业务错误码的
+    // AppError，而不是返回 c.text(...)。没有 onError 时 Hono 会把异常统一转成 500，
+    // 测试就无法断言真实的 4xx 状态码与错误码。
+    registerErrorHandlers(app as never);
 
     return { db, sqlite, env, app, cache, serverConfig, clientConfig };
 }

@@ -31,6 +31,33 @@ const WORKER_SECRET_KEYS = [
   "S3_SECRET_ACCESS_KEY",
   "SUPABASE_SECRET_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
+  // 人机验证：secret 必须走 secret，site key 是公开值可走 vars
+  "TURNSTILE_SECRET_KEY",
+  // 邮件相关凭证
+  "SMTP_PASSWORD",
+  "RESEND_API_KEY",
+  "MAIL_GATEWAY_TOKEN",
+  "MAIL_JWT_SECRET",
+] as const;
+
+/**
+ * 公开配置，走 wrangler vars 而非 secret。
+ * 这些值要么本来就公开（site key），要么只是路由信息（host / endpoint）。
+ */
+const WORKER_PUBLIC_VAR_KEYS = [
+  "TURNSTILE_SITE_KEY",
+  "TURNSTILE_ENABLED",
+  "MAIL_PROVIDER",
+  "SMTP_HOST",
+  "SMTP_PORT",
+  "SMTP_USERNAME",
+  "SMTP_FROM",
+  "RESEND_ENDPOINT",
+  "MAIL_GATEWAY_ENDPOINT",
+  "MAIL_GATEWAY_AUTH_HEADER",
+  "MAIL_GATEWAY_AUTH_TEMPLATE",
+  "MAIL_FROM",
+  "MAIL_TIMEOUT_MS",
 ] as const;
 
 function isQueueAlreadyPresentError(stderr: string) {
@@ -48,6 +75,23 @@ export function collectWorkerSecrets(source: Record<string, string | undefined> 
   }
 
   return secrets;
+}
+
+/**
+ * 收集公开配置（Turnstile site key、SMTP 连接信息）。
+ * 这些值会随 wrangler vars 写进部署配置，不是机密。
+ */
+export function collectWorkerPublicVars(source: Record<string, string | undefined> = process.env) {
+  const vars: Record<string, string> = {};
+
+  for (const key of WORKER_PUBLIC_VAR_KEYS) {
+    const value = source[key];
+    if (value && value.length > 0) {
+      vars[key] = value;
+    }
+  }
+
+  return vars;
 }
 
 async function syncWorkerSecrets(workerName: string) {
@@ -190,6 +234,8 @@ export async function runCloudflareDeploy(target: "all" | "server" | "client" = 
   // 原因：插值出来的行是零缩进，会让 stripIndent 算出的最小缩进变成 0，
   // 结果整个模板（包括 main）都不去缩进，TOML 表结构错乱，
   // wrangler 报 "Missing entry-point to Worker script"。
+  const publicVars = collectWorkerPublicVars();
+
   const varsToml = buildStorageVarsToml({
     ...storageConfig.vars,
     WEBHOOK_URL: webhookUrl,
@@ -202,6 +248,9 @@ export async function runCloudflareDeploy(target: "all" | "server" | "client" = 
     PAGE_SIZE: pageSize,
     RSS_ENABLE: rssEnable,
     FRONTEND_URL: frontendUrl,
+    // 人机验证与邮箱注册的公开配置。
+    // 未配置时键值不存在，服务端会自动把对应功能判定为关闭。
+    ...publicVars,
   });
   Bun.write(
     "wrangler.toml",

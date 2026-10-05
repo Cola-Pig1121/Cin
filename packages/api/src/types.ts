@@ -7,7 +7,15 @@ export interface ApiResponse<T> {
   data?: T;
   error?: {
     status: number;
+    /** 人类可读文案，仅作兜底展示，不要用它做逻辑分支 */
     value: string;
+    /**
+     * 业务错误码（来自 @rin/api 的 ERROR_CODES）。
+     * 前端应优先按 code 映射 i18n；`value` 会随服务端文案调整而变化。
+     */
+    code?: string;
+    /** 字段级校验详情，来自服务端 ErrorDetail[] */
+    details?: { field?: string; message: string }[];
   };
 }
 
@@ -124,11 +132,6 @@ export interface UpdateProfileRequest {
 // Auth Types
 // ============================================================================
 
-export interface AuthStatus {
-  github: boolean;
-  password: boolean;
-}
-
 export interface LoginRequest {
   username: string;
   password: string;
@@ -178,7 +181,7 @@ export interface Comment {
   guestEmail?: string;
   /** 游客评论的网站 */
   guestWebsite?: string;
-  /** 审核状态 */
+  /** 审核状态：1 已通过 / 0 待审核 */
   approved: boolean;
 }
 
@@ -190,7 +193,137 @@ export interface CreateCommentRequest {
   guestEmail?: string;
   /** 游客网站（可选） */
   guestWebsite?: string;
+  /** Cloudflare Turnstile token，启用验证码时必填 */
+  captchaToken?: string;
 }
+
+export interface CreateCommentResponse {
+  /** 新评论是否直接可见（已登录用户自动通过，游客可能进入待审核） */
+  approved: boolean;
+  id: number;
+}
+
+/** 待审核评论列表项：额外带出所属文章信息，供管理端展示 */
+export interface PendingComment extends Comment {
+  feedId: number;
+  feedTitle: string | null;
+}
+
+/** 评论管理列表响应（分页 + 可按状态筛选） */
+export interface AdminCommentListResponse {
+  comments: PendingComment[];
+  pagination: {
+    page: number;
+    size: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+// ============================================================================
+// Admin Types
+// ============================================================================
+
+/** 管理员用户列表项 */
+export interface AdminUserItem {
+  id: number;
+  username: string;
+  avatar: string | null;
+  email: string;
+  /** 邮箱是否已通过验证码验证 */
+  emailVerified: number;
+  /** 0=普通用户，1=管理员 */
+  permission: number;
+  createdAt: number;
+  /** 1 表示该账号通过邮箱注册（openid 以 `email:` 开头） */
+  viaEmail: number;
+}
+
+export interface AdminUserListResponse {
+  users: AdminUserItem[];
+  pagination: {
+    page: number;
+    size: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface AdminUserDetail extends AdminUserItem {
+  emailVerified: number;
+  commentCount: number;
+}
+
+export interface AdminUserUpdateResponse {
+  success: boolean;
+  user: {
+    id: number;
+    username: string;
+    permission: number;
+  };
+}
+
+export interface AdminUserDeleteResponse {
+  success: boolean;
+  deleted: {
+    id: number;
+    username: string;
+  };
+}
+
+// ============================================================================
+// Captcha Types
+// ============================================================================
+
+/**
+ * 前端渲染 Turnstile 所需的公开配置。
+ * siteKey 属于公开信息，可以下发到浏览器；secretKey 永远不下发。
+ */
+export interface CaptchaConfig {
+  /** 是否要求评论必须通过人机验证 */
+  enabled: boolean;
+  /**
+   * 验证适用范围：
+   * - `all`：登录用户和游客都要验证
+   * - `guest`：仅游客需要验证（登录用户视为可信）
+   * - `none`：实际等于关闭
+   */
+  scope: 'all' | 'guest';
+  /** Turnstile site key */
+  siteKey: string;
+}
+
+// ============================================================================
+// Email Registration Types
+// ============================================================================
+
+export interface RegisterRequest {
+  email: string;
+  username: string;
+  password: string;
+  /** 邮箱归属验证 token，Turnstile 开启时必填 */
+  captchaToken?: string;
+}
+
+export interface RegisterVerifyRequest {
+  email: string;
+  /** 邮件中的 6 位验证码 */
+  code: string;
+}
+
+export interface RegisterResponse {
+  success: true;
+  token: string;
+  user: UserProfile;
+}
+
+export interface AuthStatusResponse {
+  github: boolean;
+  password: boolean;
+  /** 邮箱注册是否可用（SMTP 配置完整且未在服务端关闭） */
+  register: boolean;
+}
+
 
 // ============================================================================
 // Friend Types
@@ -320,6 +453,11 @@ export const API_PATHS = {
   // Auth
   AUTH_STATUS: '/api/auth/status',
   AUTH_LOGIN: '/api/auth/login',
+  AUTH_REGISTER_REQUEST: '/api/auth/register/request',
+  AUTH_REGISTER_VERIFY: '/api/auth/register/verify',
+
+  // Captcha
+  CAPTCHA_CONFIG: '/api/comment/captcha',
 
   // User
   USER_PROFILE: '/api/user/profile',
@@ -335,6 +473,13 @@ export const API_PATHS = {
   COMMENT_LIST: (feedId: number) => `/api/comment/${feedId}`,
   COMMENT_CREATE: (feedId: number) => `/api/comment/${feedId}`,
   COMMENT_DELETE: (id: number) => `/api/comment/${id}`,
+  COMMENT_PENDING: '/api/comment/pending',
+  COMMENT_SET_APPROVED: (id: number) => `/api/comment/${id}/approved`,
+
+  // 管理员后台：用户管理
+  ADMIN_USERS: '/api/admin/users',
+  ADMIN_USER_DETAIL: (id: number) => `/api/admin/users/${id}`,
+  ADMIN_USER_UPDATE: (id: number) => `/api/admin/users/${id}`,
 
   // Friend
   FRIEND_LIST: '/api/friend',
