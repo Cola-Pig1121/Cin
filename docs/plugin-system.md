@@ -213,3 +213,112 @@ pluginRegistry.reset();   // 每个测试前重置，避免相互污染
 | `comment-guard` | 拦截含敏感词的评论 | `comment-guard.enabled`、`comment-guard.blockedWords` |
 
 完整示例见 `server/plugins/comment-guard/index.ts`。
+
+---
+
+## 启停与状态
+
+后台 `/admin/plugins` 提供：
+
+- **状态查看**：每个插件的 `enabled` / `disabled` / `error`，以及它声明了哪些扩展点
+- **一键启停**：立刻生效，不需要重新部署
+
+### 状态存在哪
+
+存 `serverConfig` 的 `plugins.enabled`，值是**逗号分隔的插件名列表**：
+
+```
+plugins.enabled = comment-guard,my-plugin
+```
+
+存列表而非逐个 boolean 键，是因为插件增删时不用清理孤儿键。
+
+### 为什么每个请求都要读一次
+
+Worker 是**常驻 isolate**。如果只在启动时读一次配置，管理员在后台关掉插件后，
+要等 isolate 被回收才生效 —— 表现为「点了没反应，重启才好」。
+
+所以 `register-middlewares.ts` 里挂了一个中间件，每个请求开始时调
+`syncEnabledFromConfig`。这是后台开关能立即生效的关键。
+
+### 停用 = 从列表移除
+
+停用是把插件名从 `plugins.enabled` 里**删掉**，不是往「停用列表」里加。
+后者会让列表无限增长，而且新插件会默认处于停用状态。
+
+**空列表意味着全部停用。** 管理员还没配置过时插件不会自动跑起来 ——
+新装一个插件就开始拦评论，不是预期行为。
+
+### 出错的插件不能切换
+
+`setup` 失败的插件状态是 `error`，后台的启停按钮会被禁用。
+理由：启用一个没跑起来的插件会让管理员误以为已经生效。
+真要修，得先改代码重新部署。
+
+## 前端页面扩展
+
+服务端钩子管行为，前端注册表管页面。两边 `manifest.name` 相同即为同一个插件。
+
+### 接入三步
+
+**1. 写页面** — `client/plugins/<name>/index.tsx`
+
+```tsx
+import type { FrontendPlugin } from '../../src/plugins/registry';
+
+function MyPage() {
+  return <div>我的插件页面</div>;
+}
+
+const plugin: FrontendPlugin = {
+  manifest: { name: 'my-plugin', displayName: '我的插件', version: '1.0.0' },
+  pages: [
+    { path: '/plugin/my-page', title: '我的页面', Component: MyPage },
+  ],
+};
+
+export default plugin;
+```
+
+**2. 注册** — `client/src/plugins/index.ts`
+
+```ts
+import myPlugin from '../../plugins/my-plugin';
+registerFrontendPlugin(myPlugin);
+```
+
+**3. 访问** — `/plugin/my-page`
+
+### 路径必须以 `/plugin/` 开头
+
+`/plugin/` 是保留前缀。这样插件**不能覆盖** `/admin/users` 这类内置页面 ——
+否则一个写错的插件能把管理后台整个顶掉。
+
+注册时就会校验前缀和路径冲突，冲突直接抛错，不等到用户点开才发现。
+
+### requireAdmin 只是 UI 隐藏
+
+```ts
+{ path: '/plugin/admin-only', title: '受限', Component: Page, requireAdmin: true }
+```
+
+`requireAdmin: true` 只是让无权限用户看到「无权限」而不是页面内容。
+
+**它不是安全边界。** 前端能显示组件不代表用户有权访问它背后的数据 ——
+服务端接口必须各自鉴权。
+
+### 路由顺序
+
+插件页面注册在 `/:alias`（文章别名通配路由）**之前**。
+wouter 按注册顺序匹配，顺序反了插件路径会被当成文章别名去解析。
+`routes.tsx` 里已经处理好，不用插件作者操心。
+
+## 内置插件
+
+| 名称 | 前端页面 | 服务端钩子 |
+|---|---|---|
+| `hello` | `/plugin/hello` | — |
+| `comment-guard` | — | `comment.beforeCreate` |
+
+完整示例见 `client/plugins/hello/index.tsx`
+与 `server/plugins/comment-guard/index.ts`。

@@ -31,6 +31,8 @@ import type {
   AdminUserDetail,
   AdminUserUpdateResponse,
   AdminUserDeleteResponse,
+  AdminPluginListResponse,
+  AdminPluginToggleResponse,
   Friend,
   FriendListResponse,
   CreateFriendRequest,
@@ -488,6 +490,28 @@ class AdminUserAPI {
 }
 
 /**
+ * 插件管理 API
+ */
+class AdminPluginAPI {
+  constructor(private http: HttpClient) {}
+
+  // GET /api/admin/plugins
+  async list(): Promise<ApiResponse<AdminPluginListResponse>> {
+    return this.http.get<AdminPluginListResponse>(API_PATHS.ADMIN_PLUGINS);
+  }
+
+  // PUT /api/admin/plugins/:name — 启用或停用
+  async setEnabled(
+    name: string,
+    enabled: boolean,
+  ): Promise<ApiResponse<AdminPluginToggleResponse>> {
+    return this.http.put<AdminPluginToggleResponse>(API_PATHS.ADMIN_PLUGIN_TOGGLE(name), {
+      enabled,
+    });
+  }
+}
+
+/**
  * Friend API methods
  */
 class FriendAPI {
@@ -775,6 +799,7 @@ export class ApiClient {
   wp: WordPressAPI;
   rss: RSSAPI;
   adminUser: AdminUserAPI;
+  adminPlugin: AdminPluginAPI;
 
   constructor(baseUrl: string) {
     this.http = new HttpClient(baseUrl);
@@ -783,6 +808,7 @@ export class ApiClient {
     this.comment = new CommentAPI(this.http);
     this.user = new UserAPI(this.http);
     this.adminUser = new AdminUserAPI(this.http);
+    this.adminPlugin = new AdminPluginAPI(this.http);
     this.friend = new FriendAPI(this.http);
     this.moments = new MomentsAPI(this.http);
     this.config = new ConfigAPI(this.http);

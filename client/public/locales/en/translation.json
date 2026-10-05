@@ -889,5 +889,29 @@
       "next": "Next",
       "status": "Page {{page}} / {{totalPages}}"
     }
+  },
+  "plugins": {
+    "title": "Plugin management",
+    "description": "Review plugin status, enable or disable them. Toggles take effect immediately.",
+    "summary": "{{total}} plugin(s), {{enabled}} enabled",
+    "empty": "No plugins yet",
+    "load_failed": "Failed to load plugins",
+    "load_failed_desc": "Please refresh and try again",
+    "status": {
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "error": "Load failed"
+    },
+    "action": {
+      "enable": "Enable",
+      "disable": "Disable"
+    },
+    "api_prefix": "API prefix:",
+    "error_reason": "Reason:",
+    "about_title": "Adding a plugin",
+    "about_desc": "Plugins are compiled in, so changes require a rebuild and redeploy",
+    "about_docs": "Full docs:",
+    "about_server": "Server entry:",
+    "about_client": "Client entry:"
   }
 }

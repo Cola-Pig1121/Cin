@@ -48,6 +48,34 @@ export class PluginRejectionError extends Error {
 }
 
 /**
+ * 启用状态在 serverConfig 里的键。
+ *
+ * 值是逗号分隔的插件名列表。存列表而非逐个 boolean 键，
+ * 是因为插件增删时不需要清理孤儿键。
+ */
+export const ENABLED_KEY = 'plugins.enabled';
+
+/**
+ * 解析启用列表。
+ *
+ * 存的是字符串（config 存的都是字符串），也兼容直接存了数组的情况。
+ * 空值返回空数组 —— 即「全都没启用」，这是保守侧：
+ * 管理员还没配置过时不该让插件全部自动跑起来。
+ */
+function parseEnabledList(raw: unknown): string[] {
+  if (Array.isArray(raw)) {
+    return raw.map((item) => String(item).trim()).filter(Boolean);
+  }
+  if (typeof raw !== 'string' || raw.trim() === '') {
+    return [];
+  }
+  return raw
+    .split(',')
+    .map((name) => name.trim())
+    .filter(Boolean);
+}
+
+/**
  * 插件注册中心。
  *
  * 全局单例 —— Worker 里每个 isolate 一份，不需要跨请求同步。
@@ -55,6 +83,74 @@ export class PluginRejectionError extends Error {
  */
 export class PluginRegistry {
   private plugins: RegisteredPlugin[] = [];
+  /**
+   * 已启用的插件名集合。
+   *
+   * 存在 DB（serverConfig 的 `plugins.enabled`）里，因此**每个请求都要读一次**。
+   * Worker 是常驻的，不能只在启动时读 —— 管理员改了开关必须立即生效。
+   * 为避免每次派发都打 DB，`syncEnabled` 在请求开始时调一次并缓存结果。
+   */
+  private enabledNames: Set<string> | null = null;
+
+  /**
+   * 标记某个插件被停用（后台点开关时调用）。
+   *
+   * 只改内存状态，不碰 `enabledNames` 缓存 —— 真正的持久化在
+   * 管理接口里写 serverConfig，由下一次 syncEnabled 读回。
+   */
+  setStatus(name: string, status: RegisteredPlugin['status'], error?: string): boolean {
+    const entry = this.plugins.find((p) => p.manifest.name === name);
+    if (!entry) return false;
+
+    entry.status = status;
+    if (error !== undefined) entry.error = error;
+    return true;
+  }
+
+  /**
+   * 同步启用状态。
+   *
+   * 必须在**每个请求开始时**调用（见 `syncEnabledFromConfig`），
+   * 否则管理员在后台关掉插件后，isolate 里的缓存仍会继续派发钩子。
+   *
+   * @param reader serverConfig 实例
+   */
+  async syncEnabledFromConfig(reader: { get(key: string): Promise<unknown> }): Promise<void> {
+    const raw = await reader.get(ENABLED_KEY);
+    const names = parseEnabledList(raw);
+
+    this.enabledNames = new Set(names);
+    for (const entry of this.plugins) {
+      // 出错的插件保持 error 状态：它本身就没跑起来，
+      // 重新启用也不会自动修好，不如让管理员看到真实原因
+      if (entry.status === 'error') continue;
+      entry.status = this.enabledNames.has(entry.manifest.name) ? 'enabled' : 'disabled';
+    }
+  }
+
+  /** 全部插件（供后台展示） */
+  list(): readonly RegisteredPlugin[] {
+    return this.plugins;
+  }
+
+  /**
+   * 已启用的插件。钩子派发只走这个集合。
+   *
+   * syncEnabled 还没跑过时**假设全部启用**：启动阶段（setup、路由挂载）
+   * 不该因为还没同步状态而静默跳过所有插件。真正的请求路径会先调
+   * `syncEnabledFromConfig`，那里拿到的状态才是权威的。
+   */
+  enabled(): RegisteredPlugin[] {
+    if (this.enabledNames === null) {
+      return this.plugins.filter((p) => p.status !== 'error');
+    }
+    return this.plugins.filter((p) => p.status === 'enabled');
+  }
+
+  /** 当前是否已同步过启用状态。测试用它判断状态是否已生效 */
+  hasSynced(): boolean {
+    return this.enabledNames !== null;
+  }
 
   /**
    * 注册一个插件。
@@ -75,16 +171,6 @@ export class PluginRegistry {
       hooks: stripManifest(plugin),
       status: 'enabled',
     });
-  }
-
-  /** 列出全部已注册插件（含禁用的），供后台展示 */
-  list(): readonly RegisteredPlugin[] {
-    return this.plugins;
-  }
-
-  /** 找出已启用的插件 */
-  enabled(): RegisteredPlugin[] {
-    return this.plugins.filter((p) => p.status === 'enabled');
   }
 
   /**
@@ -255,6 +341,8 @@ export class PluginRegistry {
   /** 供测试用：清空注册表 */
   reset(): void {
     this.plugins = [];
+    // 必须一起清：否则测试里重新注册同名插件时会沿用上一次的启用集合
+    this.enabledNames = null;
   }
 }
 

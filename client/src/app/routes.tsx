@@ -12,6 +12,7 @@ import useTableOfContents from "../hooks/useTableOfContents";
 import { useSiteConfig } from "../hooks/useSiteConfig";
 import { CallbackPage } from "../page/callback";
 import { CompatTasksPage } from "../page/compat-tasks";
+import { AdminPluginsPage } from "../page/admin-plugins";
 import { AdminUsersPage } from "../page/admin-users";
 import { CommentModerationPage } from "../page/comment-moderation";
 import { ErrorPage } from "../page/error";
@@ -31,6 +32,8 @@ import { Settings } from "../page/settings";
 import { TimelinePage } from "../page/timeline";
 import { WritingPage } from "../page/writing";
 import { ProfileContext } from "../state/profile";
+import { listPluginPages, type PluginPage } from "../plugins/registry";
+import "../../plugins";
 import { tryInt } from "../utils/int";
 import { useTranslation } from "react-i18next";
 
@@ -83,6 +86,10 @@ export function AppRoutes() {
         <AdminUsersPage />
       </AdminRoute>
 
+      <AdminRoute path="/admin/plugins" requirePermission title={t("plugins.title")} description={t("plugins.description")}>
+        <AdminPluginsPage />
+      </AdminRoute>
+
       <AdminRoute path="/admin/queue-status" requirePermission title={t("queue_status.title")} description={t("admin.queue_status_description")}>
         <QueueStatusPage />
       </AdminRoute>
@@ -114,6 +121,12 @@ export function AppRoutes() {
       <AppRoute path="/profile">
         <ProfilePage />
       </AppRoute>
+
+      {/* 插件页面：必须注册在 `/:alias` 通配路由之前，
+          否则插件的路径会被当成文章别名去解析 */}
+      {listPluginPages().map((page) => (
+        <PluginRoute key={page.path} page={page} />
+      ))}
 
       <TocRoute path="/feed/:id">
         {(params, toc, cleanup) => <FeedPage id={params.id || ""} TOC={toc} clean={cleanup} />}
@@ -182,6 +195,25 @@ function AppRoute({
         });
       }}
     </Route>
+  );
+}
+
+function PluginRoute({ page }: { page: PluginPage }) {
+  const { t } = useTranslation();
+  const profile = useContext(ProfileContext);
+
+  // requireAdmin 只是 UI 层隐藏，不是安全边界 ——
+  // 服务端接口必须各自鉴权，这里只是避免让无权用户看到不该看的界面
+  const denied = page.requireAdmin && !profile?.permission;
+
+  return (
+    <AppRoute path={page.path}>
+      {denied ? (
+        <ErrorPage error={t("error.permission_denied")} />
+      ) : (
+        <page.Component />
+      )}
+    </AppRoute>
   );
 }
 

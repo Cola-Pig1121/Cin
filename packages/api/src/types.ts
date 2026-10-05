@@ -272,6 +272,44 @@ export interface AdminUserDeleteResponse {
 }
 
 // ============================================================================
+// Plugin Types
+// ============================================================================
+
+/** 插件在后台列表里的状态 */
+export type PluginStatus = 'enabled' | 'disabled' | 'error';
+
+export interface AdminPluginItem {
+  name: string;
+  displayName: string;
+  version: string;
+  description: string;
+  author: string;
+  status: PluginStatus;
+  /** 加载失败的原因。status 为 error 时非空 */
+  error: string | null;
+  /** 插件声明的扩展点，如 ['comment.beforeCreate', 'routes'] */
+  capabilities: string[];
+  /** 插件自定义 API 的挂载前缀；未提供 routes 时为 null */
+  apiPrefix: string | null;
+}
+
+export interface AdminPluginListResponse {
+  /** 启用状态在 serverConfig 里的键名，提示管理员去哪看 */
+  enabledKey: string;
+  plugins: AdminPluginItem[];
+}
+
+export interface AdminPluginToggleResponse {
+  success: boolean;
+  data: {
+    name: string;
+    status: PluginStatus;
+    enabledKey: string;
+    enabledList: string[];
+  };
+}
+
+// ============================================================================
 // Captcha Types
 // ============================================================================
 
@@ -484,6 +522,10 @@ export const API_PATHS = {
   // 文章写入 API：供脚本与 CI 调用，结构化 JSON 响应，全部要求管理员权限
   FEED_WRITE: '/api/feed-write',
   FEED_WRITE_DETAIL: (id: number) => `/api/feed-write/${id}`,
+
+  // 插件管理
+  ADMIN_PLUGINS: '/api/admin/plugins',
+  ADMIN_PLUGIN_TOGGLE: (name: string) => `/api/admin/plugins/${name}`,
 
   // Friend
   FRIEND_LIST: '/api/friend',

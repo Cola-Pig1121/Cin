@@ -889,5 +889,29 @@
       "next": "下一頁",
       "status": "第 {{page}} / {{totalPages}} 頁"
     }
+  },
+  "plugins": {
+    "title": "外掛管理",
+    "description": "檢視外掛狀態、啟用或停用。啟停立即生效，無需重新部署",
+    "summary": "共 {{total}} 個外掛，{{enabled}} 個已啟用",
+    "empty": "還沒有任何外掛",
+    "load_failed": "載入外掛列表失敗",
+    "load_failed_desc": "請重新整理頁面重試",
+    "status": {
+      "enabled": "已啟用",
+      "disabled": "已停用",
+      "error": "載入失敗"
+    },
+    "action": {
+      "enable": "啟用",
+      "disable": "停用"
+    },
+    "api_prefix": "API 前綴：",
+    "error_reason": "失敗原因：",
+    "about_title": "如何新增外掛",
+    "about_desc": "外掛是編譯期內置的，修改後需要重新建置部署",
+    "about_docs": "完整文件見",
+    "about_server": "伺服器端註冊入口：",
+    "about_client": "前端註冊入口："
   }
 }

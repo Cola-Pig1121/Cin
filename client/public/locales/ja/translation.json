@@ -880,5 +880,29 @@
       "next": "次へ",
       "status": "{{page}} / {{totalPages}} ページ"
     }
+  },
+  "plugins": {
+    "title": "プラグイン管理",
+    "description": "プラグインの状態確認と有効/無効の切り替え。変更は即座に反映されます",
+    "summary": "プラグイン {{total}} 個、{{enabled}} 個が有効",
+    "empty": "プラグインはまだありません",
+    "load_failed": "プラグイン一覧の読み込みに失敗",
+    "load_failed_desc": "ページを再読み込みしてください",
+    "status": {
+      "enabled": "有効",
+      "disabled": "無効",
+      "error": "読み込み失敗"
+    },
+    "action": {
+      "enable": "有効化",
+      "disable": "無効化"
+    },
+    "api_prefix": "API プレフィックス：",
+    "error_reason": "理由：",
+    "about_title": "プラグインの追加方法",
+    "about_desc": "プラグインはビルドインです。変更には再ビルドと再デプロイが必要です",
+    "about_docs": "詳細ドキュメント：",
+    "about_server": "サーバー登録：",
+    "about_client": "クライアント登録："
   }
 }
