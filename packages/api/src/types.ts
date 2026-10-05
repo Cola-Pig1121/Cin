@@ -481,6 +481,10 @@ export const API_PATHS = {
   ADMIN_USER_DETAIL: (id: number) => `/api/admin/users/${id}`,
   ADMIN_USER_UPDATE: (id: number) => `/api/admin/users/${id}`,
 
+  // 文章写入 API：供脚本与 CI 调用，结构化 JSON 响应，全部要求管理员权限
+  FEED_WRITE: '/api/feed-write',
+  FEED_WRITE_DETAIL: (id: number) => `/api/feed-write/${id}`,
+
   // Friend
   FRIEND_LIST: '/api/friend',
   FRIEND_CREATE: '/api/friend',

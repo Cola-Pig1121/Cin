@@ -27,7 +27,10 @@ export const feedUpdateSchema = t.Object({
   alias: t.String({ optional: true }),
   content: t.String({ optional: true }),
   summary: t.String({ optional: true }),
-  listed: t.Boolean(),
+  // optional：更新是「局部更新」，不传就表示不改。
+  // 必填会让只想改标题的调用方被迫先读一遍再回传整个表单 ——
+  // 网页端是整表单提交所以一直带着，但 API 调用方不该被这个约束绑住。
+  listed: t.Boolean({ optional: true }),
   draft: t.Boolean({ optional: true }),
   createdAt: t.Date({ optional: true }),
   tags: t.Array(t.String(), { optional: true }),

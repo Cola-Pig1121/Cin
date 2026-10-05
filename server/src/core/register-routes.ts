@@ -5,6 +5,7 @@ import { CommentService } from "../services/comments";
 import { ConfigService } from "../services/config";
 import { FaviconService } from "../services/favicon";
 import { FeedService, SearchService, WordPressService } from "../services/feed";
+import { FeedWriteApiService } from "../services/feed-write-api";
 import { FriendService } from "../services/friends";
 import { MomentsService } from "../services/moments";
 import { RegistrationService } from "../services/registration";
@@ -19,6 +20,8 @@ export function registerRoutes(app: RinApp) {
   app.get("/", (c) => c.text("Hi"));
 
   app.route("/feed", FeedService());
+  // 文章写入 API：与网页端创建文章分开，供脚本/CI 调用（结构化 JSON + dryRun）
+  app.route("/feed-write", FeedWriteApiService());
   app.route("/search", SearchService());
   app.route("/wp", WordPressService());
   app.route("/tag", TagService());

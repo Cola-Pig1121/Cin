@@ -71,6 +71,32 @@ export const AUTH_ERROR_CODES = {
 
 export type AuthErrorCode = (typeof AUTH_ERROR_CODES)[keyof typeof AUTH_ERROR_CODES];
 
+/**
+ * 文章写入相关的错误码。
+ *
+ * 供 `POST /api/feed-write` 这类供脚本调用的接口使用。
+ * 单独分组而不是复用 COMMENT_*: 文章的「已存在」与评论的「已存在」
+ * 是两件事，前端文案也不该混在一起。
+ */
+export const FEED_ERROR_CODES = {
+  /** 请求体未通过 schema 校验 */
+  FEED_VALIDATION_FAILED: 'FEED_VALIDATION_FAILED',
+  /** 标题与内容都与既有文章重复 */
+  FEED_ALREADY_EXISTS: 'FEED_ALREADY_EXISTS',
+  /** 文章不存在 */
+  FEED_NOT_FOUND: 'FEED_NOT_FOUND',
+  /** 写入数据库失败 */
+  FEED_CREATE_FAILED: 'FEED_CREATE_FAILED',
+  /** 更新数据库失败 */
+  FEED_UPDATE_FAILED: 'FEED_UPDATE_FAILED',
+  /** 删除数据库失败 */
+  FEED_DELETE_FAILED: 'FEED_DELETE_FAILED',
+  /** 调用者已登录但不是管理员 */
+  FEED_PERMISSION_DENIED: 'FEED_PERMISSION_DENIED',
+} as const;
+
+export type FeedErrorCode = (typeof FEED_ERROR_CODES)[keyof typeof FEED_ERROR_CODES];
+
 export const TURNS = {
   CAPTCHA: 'CAPTCHA',
   COMMENT: 'COMMENT',
@@ -83,6 +109,7 @@ export const TURNS = {
 export const API_ERROR_CODES = {
   ...COMMENT_ERROR_CODES,
   ...AUTH_ERROR_CODES,
+  ...FEED_ERROR_CODES,
 } as const;
 
 export type ApiErrorCode = (typeof API_ERROR_CODES)[keyof typeof API_ERROR_CODES];
