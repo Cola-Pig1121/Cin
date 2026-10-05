@@ -13,6 +13,7 @@ import { SitemapService } from "../services/sitemap";
 import { BlobService, StorageService } from "../services/storage";
 import { TagService } from "../services/tag";
 import { UserService } from "../services/user";
+import { pluginRegistry } from "../plugins/registry";
 
 export function registerRoutes(app: RinApp) {
   app.get("/", (c) => c.text("Hi"));
@@ -37,4 +38,10 @@ export function registerRoutes(app: RinApp) {
   app.route("/", SitemapService());
   app.route("/favicon", FaviconService());
   app.route("/favicon.ico", FaviconService());
+
+  // 插件自定义路由挂到 /plugins/{插件名}/ 下。
+  // 放在所有内置路由之后，避免插件意外覆盖既有端点。
+  pluginRegistry.mountRoutes((path, subApp) => {
+    app.route(path, subApp as never);
+  });
 }
