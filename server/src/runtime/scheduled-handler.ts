@@ -1,13 +1,12 @@
-import { drizzle } from "drizzle-orm/d1";
 import { CacheImpl } from "../utils/cache";
+import { createOrm } from "./orm";
 
 export async function handleScheduled(
   _controller: ScheduledController | null,
   env: Env,
   ctx: ExecutionContext,
 ) {
-  const schema = await import("../db/schema");
-  const db = drizzle(env.DB, { schema });
+  const db = await createOrm(env as unknown as Record<string, any>);
 
   const serverConfig = new CacheImpl(db, env, "server.config", "database");
   const clientConfig = new CacheImpl(db, env, "client.config");

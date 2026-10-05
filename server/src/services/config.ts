@@ -130,6 +130,74 @@ export function ConfigService(): Hono {
         }
     }, { format: 'json' }));
 
+    // POST /config/test-artalk
+    // 从服务端发起请求验证 Artalk 连通性。放在服务端而非浏览器，
+    // 是为了能验证内网地址（如 Docker 网络里的 artalk:23366），
+    // 这类地址浏览器未必能访问。
+    app.post('/test-artalk', adminOnly(async (c: AppContext) => {
+        const body = await wrapTime(c, 'request_body', c.req.json()) as {
+            server?: string;
+        };
+
+        const rawServer = (body.server || '').trim();
+
+        if (!rawServer) {
+            return c.json({ success: false, error: "Artalk server URL is required" }, 400);
+        }
+
+        // 归一化：去掉末尾斜杠，避免拼出的 /api/v2/conf 出现双斜杠
+        const normalized = rawServer.replace(/\/+$/, '');
+
+        let target: URL;
+        try {
+            target = new URL(`${normalized}/api/v2/conf`);
+        } catch {
+            return c.json({
+                success: false,
+                error: "Invalid Artalk server URL. Include the scheme, e.g. http://192.168.21.250:23366",
+            }, 400);
+        }
+
+        // 只允许 http/https，避免 file:// 之类的协议被利用
+        if (target.protocol !== "http:" && target.protocol !== "https:") {
+            return c.json({ success: false, error: "Artalk server must use http or https" }, 400);
+        }
+
+        // 避免探测内网被滥用，限制响应体读取量
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+
+        try {
+            const response = await fetch(target.toString(), {
+                signal: controller.signal,
+                headers: { accept: "application/json" },
+            });
+
+            if (!response.ok) {
+                return c.json({
+                    success: false,
+                    error: `Artalk responded with status ${response.status}`,
+                }, 400);
+            }
+
+            const conf = await response.json() as { frontend_conf?: unknown };
+
+            return c.json({
+                success: true,
+                site: target.origin,
+                hasFrontendConf: Boolean(conf?.frontend_conf),
+            });
+        } catch (error) {
+            const message = error instanceof Error
+                ? (error.name === "AbortError" ? "Connection timed out after 8s" : error.message)
+                : String(error);
+
+            return c.json({ success: false, error: message }, 400);
+        } finally {
+            clearTimeout(timeout);
+        }
+    }, { format: 'json' }));
+
     // GET /config
     app.get('/', adminOnly(async (c: AppContext) => {
         const serverConfig = c.get('serverConfig');

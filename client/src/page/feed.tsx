@@ -20,6 +20,7 @@ import { Button } from "../components/button";
 import { Tips } from "../components/tips";
 import mermaid from "mermaid";
 import { AdjacentSection } from "../components/adjacent_feed.tsx";
+import { ArtalkComments } from "../components/artalk-comments";
 import { stripImageUrlMetadata } from "../utils/image-upload";
 
 function extractFirstMarkdownImageUrl(content: string) {
@@ -306,7 +307,7 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
                 </div>
               </article>
               {id !== "about" && <AdjacentSection id={id} setError={setError} />}
-              {feed && <Comments id={`${feed.id}`} />}
+              {feed && <Comments id={`${feed.id}`} title={feed.title ?? ""} />}
               <div className="h-16" />
             </main>
             <div className="w-80 hidden lg:block relative">
@@ -508,12 +509,17 @@ type Comment = {
   guestWebsite?: string;
 };
 
-function Comments({ id }: { id: string }) {
+function Comments({ id, title }: { id: string; title?: string }) {
   const config = useContext(ClientConfigContext);
   const [comments, setComments] = useState<Comment[]>([]);
   const [error, setError] = useState<string>();
   const ref = useRef("");
   const { t } = useTranslation();
+
+  // Artalk 是默认评论后端；provider=builtin 可切回 Rin 内置评论
+  const provider = String(config.get("comment.provider") ?? "artalk");
+  const commentsEnabled = config.getBoolean("comment.enabled") !== false;
+  const useArtalk = commentsEnabled && provider === "artalk";
 
   function loadComments() {
     client.comment
@@ -527,41 +533,54 @@ function Comments({ id }: { id: string }) {
       });
   }
   useEffect(() => {
+    // 走 Artalk 时不需要请求内置评论接口
+    if (useArtalk || !commentsEnabled) return;
     if (ref.current == id) return;
     loadComments();
     ref.current = id;
-  }, [id]);
+  }, [id, useArtalk, commentsEnabled]);
+
+  if (!commentsEnabled) {
+    return null;
+  }
+
+  if (useArtalk) {
+    return (
+      <div className="m-2">
+        <ArtalkComments id={id} title={title} />
+      </div>
+    );
+  }
+
   return (
     <>
-      {config.getBoolean('comment.enabled') &&
-        <div className="m-2 flex flex-col justify-center items-center">
-          <CommentInput id={id} onRefresh={loadComments} />
-          {error && (
-            <>
-              <div className="flex flex-col wauto rounded-2xl bg-w t-primary m-2 p-6 items-center justify-center">
-                <h1 className="text-xl font-bold t-primary">{error}</h1>
-                <button
-                  className="mt-2 bg-theme text-white px-4 py-2 rounded-full"
-                  onClick={loadComments}
-                >
-                  {t("reload")}
-                </button>
-              </div>
-            </>
-          )}
-          {comments.length > 0 && (
-            <div className="w-full">
-              {comments.map((comment) => (
-                <CommentItem
-                  key={comment.id}
-                  comment={comment}
-                  onRefresh={loadComments}
-                />
-              ))}
+      <div className="m-2 flex flex-col justify-center items-center">
+        <CommentInput id={id} onRefresh={loadComments} />
+        {error && (
+          <>
+            <div className="flex flex-col wauto rounded-2xl bg-w t-primary m-2 p-6 items-center justify-center">
+              <h1 className="text-xl font-bold t-primary">{error}</h1>
+              <button
+                className="mt-2 bg-theme text-white px-4 py-2 rounded-full"
+                onClick={loadComments}
+              >
+                {t("reload")}
+              </button>
             </div>
-          )}
-        </div>
-      }
+          </>
+        )}
+        {comments.length > 0 && (
+          <div className="w-full">
+            {comments.map((comment) => (
+              <CommentItem
+                key={comment.id}
+                comment={comment}
+                onRefresh={loadComments}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </>
   );
 }

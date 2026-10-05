@@ -1,0 +1,52 @@
+# Rin Docker Compose 部署
+#
+# 默认单容器：Rin 自带 SQLite 与本地磁盘存储，开箱即用。
+# 想把数据与文件放到 Supabase，把 RIN_RUNTIME 改成 supabase 并填好对应变量即可
+# （见 .env.example 与 docs/LOCAL_DEPLOYMENT.md）。
+#
+#   docker compose up -d
+#   访问 http://localhost:23365
+#
+# 启动后用 .env 里的 ADMIN_USERNAME / ADMIN_PASSWORD 登录，
+# 首次登录会自动创建管理员账号。
+
+services:
+  rin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rin:local
+    container_name: rin
+    restart: unless-stopped
+    ports:
+      # 左侧是宿主机端口，右侧是容器内端口。改左侧即可换对外端口
+      - "${RIN_HOST_PORT:-23365}:23365"
+    # .env 是可选的（compose 会自动读取），配置都走默认值也能跑。
+    # 需要自定义时复制 .env.docker.example 为 .env 后填写。
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # 容器内固定为 local 运行时，数据库与上传目录都在挂载卷里
+      RIN_RUNTIME: ${RIN_RUNTIME:-local}
+      RIN_DATA_DIR: /app/data
+      RIN_CLIENT_DIST: /app/dist/client
+      BACKEND_PORT: "23365"
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      # SQLite 数据库与上传的图片。备份直接打包这个卷即可
+      - rin-data:/app/data
+    healthcheck:
+      test:
+        - CMD
+        - bun
+        - -e
+        - "const r = await fetch('http://127.0.0.1:23365/api/config'); process.exit(r.status < 500 ? 0 : 1)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  rin-data:
+    driver: local

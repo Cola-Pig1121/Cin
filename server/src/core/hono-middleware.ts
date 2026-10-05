@@ -5,6 +5,7 @@ import { drizzle } from "drizzle-orm/d1";
 import type { AppContext, Variables, JWTUtils, OAuth2Utils } from "./hono-types";
 import { eq } from "drizzle-orm";
 import { profileAsync } from "./server-timing";
+import { resolveRuntimeKind, isLocalRuntime } from "../runtime/types";
 
 // Lazy initialization container
 class LazyInitContainer {
@@ -45,7 +46,17 @@ export const initContainerMiddleware = createMiddleware<{
         const container = new LazyInitContainer(c.env);
 
         const db = await container.get('db', async () => profileAsync(c, "init_db", async () => {
-            const schema = await import('../db/schema');
+            const runtime = resolveRuntimeKind(c.env as unknown as { RIN_RUNTIME?: string });
+
+            // 本地 / Supabase 的驱动在进程启动时已建好，直接复用单例；
+            // D1 是异步绑定，必须在请求内用 schema 现场构造
+            if (isLocalRuntime(runtime)) {
+                const { getRuntimeContext } = await import('../runtime/context');
+                const context = await getRuntimeContext({ kind: runtime, env: c.env });
+                return context.db.orm;
+            }
+
+            const schema = await import('../db/schema.sqlite');
             return drizzle(c.env.DB, { schema });
         }));
 

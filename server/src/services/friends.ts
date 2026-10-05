@@ -219,9 +219,18 @@ export function FriendService(): Hono {
     return app;
 }
 
+/**
+ * 只依赖 ExecutionContext 的 waitUntil。
+ * 抽成最小结构类型后，Cloudflare 的 ExecutionContext 与本地的
+ * createLocalExecutionContext() 都能传入（见 runtime/context.ts）。
+ */
+export interface BackgroundContext {
+    waitUntil(promise: Promise<unknown>): void;
+}
+
 export async function friendCrontab(
     env: Env,
-    ctx: ExecutionContext,
+    ctx: BackgroundContext,
     db: DB,
     cache: CacheImpl,
     serverConfig: CacheImpl,

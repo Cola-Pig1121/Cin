@@ -19,6 +19,7 @@ import { FEED_LAYOUT_OPTIONS, normalizeFeedLayout } from "../components/feed-lay
 import { useSiteConfig } from "../hooks/useSiteConfig";
 import { applyThemeColor, normalizeThemeColor } from "../utils/theme-color";
 import { AISummarySettings } from "./settings-ai";
+import { ArtalkSettings } from "./settings-artalk";
 import { ItemButton, ItemImageInput, ItemInput, ItemSwitch, ItemTitle, ItemWithUpload } from "./settings-items";
 import {
   areSettingsDraftsEqual,
@@ -438,6 +439,13 @@ export function Settings() {
             checked={clientConfig.getBoolean("comment.enabled")}
             onChange={(checked) => {
               setConfigValue("client", "comment.enabled", checked);
+            }}
+          />
+          <ArtalkSettings
+            getValue={(key) => clientConfig.get(key)}
+            getBoolean={(key) => clientConfig.getBoolean(key)}
+            setValue={(key, value) => {
+              setConfigValue("client", key, value);
             }}
           />
           <ItemSwitch

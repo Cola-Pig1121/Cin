@@ -29,7 +29,7 @@ https://xeu.life
 - **Custom Slugs**: Assign friendly URLs like `https://yourblog.com/about` using custom article aliases.
 - **Unlisted Posts**: Option to keep articles out of the public homepage listing.
 - **Blogroll**: Add links to friends' blogs. The backend automatically checks link availability every 20 minutes.
-- **Comment System**: Reply to comments or moderate them with delete functionality.
+- **Comment System**: Powered by [Artalk](https://github.com/ArtalkJS/Artalk) — self-hosted comment service with its own data store, admin dashboard, and Markdown support. Can be pointed at any Artalk instance from the settings page. The built-in comment backend is retained as a fallback.
 - **Webhook Notifications**: Receive real-time alerts for new comments via configurable webhooks.
 - **Featured Images**: Automatically detect the first image in an article and use it as the cover image in listings.
 - **Tag Parsing**: Input tags like `#Blog #Cloudflare` and have them automatically parsed and displayed.
@@ -56,6 +56,43 @@ bun run dev
 ```
 
 Visit http://localhost:5173 to start hacking!
+
+### Run Locally (No Cloudflare Required)
+
+Rin can also run entirely on your own machine — SQLite for data, local disk for
+uploads. No Cloudflare account, no wrangler.
+
+```bash
+bun install
+cp .env.example .env.local   # set RIN_RUNTIME=local and a JWT_SECRET
+bun run setup:local          # create the database
+bun run start:local          # http://127.0.0.1:11498
+```
+
+Supabase can back both the database (Postgres) and file storage (S3-compatible
+endpoint). See [docs/LOCAL_DEPLOYMENT.md](./docs/LOCAL_DEPLOYMENT.md) for the
+full guide, including the runtime comparison table and known differences.
+
+### Docker
+
+```bash
+cp .env.docker.example .env    # set at least JWT_SECRET
+docker compose up -d --build
+```
+
+One container, one port, serving both the API and the frontend. Data lives in
+the `rin-data` volume. See [docs/DOCKER_DEPLOYMENT.md](./docs/DOCKER_DEPLOYMENT.md)
+for backups, reverse proxy setup, Supabase mode, and running Artalk side by side.
+
+### Artalk Comments
+
+Comments are handled by [Artalk](https://github.com/ArtalkJS/Artalk), a
+self-hosted comment service that keeps its own data. Point Rin at your instance
+under **Settings → Other → Artalk Comments**, then use **Test connection** to
+verify. The built-in comment backend remains available as a fallback.
+
+See [docs/ARTALK.md](./docs/ARTALK.md) for the server-address pitfalls (the
+address the browser needs is not always the one the server can reach).
 
 ### Testing
 

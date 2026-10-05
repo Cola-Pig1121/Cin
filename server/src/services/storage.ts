@@ -9,6 +9,21 @@ function buf2hex(buffer: ArrayBuffer) {
         .join('');
 }
 
+/** 只取安全的扩展名片段，防止 key 里带路径分隔符或空字节 */
+function safeExtension(value: string | undefined): string {
+    if (!value) {
+        return '';
+    }
+
+    const ext = value.includes('.') ? (value.split('.').pop() ?? '') : '';
+    return /^[A-Za-z0-9]{1,8}$/.test(ext) ? ext.toLowerCase() : '';
+}
+
+/** 依次从调用方 key、上传文件名中取扩展名 */
+function resolveSuffix(key: string, fileName?: string): string {
+    return safeExtension(key) || safeExtension(fileName);
+}
+
 export function StorageService(): Hono {
     const app = new Hono();
 
@@ -18,21 +33,29 @@ export function StorageService(): Hono {
         const env = c.get('env');
         
         const body = await profileAsync(c, 'storage_parse', () => c.req.parseBody());
-        const key = body.key as string;
-        const file = body.file as File;
-        
+        // key 与 file 都是可选字段（前端只传 file），缺任一都应给出明确错误
+        // 而不是让 undefined.includes 抛出 500
+        const key = typeof body.key === 'string' ? body.key : '';
+        const file = body.file as File | undefined;
+
         if (!uid) {
             return c.text('Unauthorized', 401);
         }
-        
-        const suffix = key.includes(".") ? key.split('.').pop() : "";
+
+        if (!file || typeof file.arrayBuffer !== 'function') {
+            return c.text('file is required', 400);
+        }
+
+        // 优先用调用方给的 key 后缀；key 为空时回退到上传文件名，
+        // 否则会生成 "hash." 这种没有扩展名的对象键，浏览器无法正确识别类型
+        const suffix = resolveSuffix(key, file.name);
         const fileBuffer = await profileAsync(c, 'storage_file_buffer', () => file.arrayBuffer());
         const hashArray = await profileAsync(c, 'storage_hash', () => crypto.subtle.digest(
             { name: 'SHA-1' },
             fileBuffer
         ));
         const hash = buf2hex(hashArray);
-        const hashkey = `${hash}.${suffix}`;
+        const hashkey = suffix ? `${hash}.${suffix}` : hash;
         
         try {
             const result = await profileAsync(c, 'storage_put', () => putStorageObject(env, hashkey, file, file.type, new URL(c.req.url).origin));

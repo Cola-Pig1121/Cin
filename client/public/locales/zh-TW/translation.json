@@ -103,7 +103,15 @@
     "guest_name_required": "暱稱不能為空",
     "guest_name_placeholder": "暱稱（必填）",
     "guest_email_placeholder": "郵箱（可選）",
-    "guest_website_placeholder": "網站（可選）"
+    "guest_website_placeholder": "網站（可選）",
+    "artalk": {
+      "no_server": "尚未設定 Artalk 伺服器位址",
+      "load_failed": "Artalk 用戶端載入失敗",
+      "configure_hint": "請在「設定 → 其他設定 → Artalk 評論」中填寫伺服器位址",
+      "empty": "還沒有評論，來搶沙發吧",
+      "fetch_failed": "評論區載入失敗",
+      "trusted_domains_hint": "若顯示「Failed to fetch」，需把本站網址加入 Artalk 後台的信任網域（站點 → 修改 URL），儲存後重新啟動 Artalk。"
+    }
   },
   "comparison": "比較",
   "confirm": "確認",
@@ -297,8 +305,42 @@
     },
     "comment": {
       "enable": {
-        "desc": "開啟/關閉文章底部留言入口與留言區",
-        "title": "啟用留言"
+        "desc": "總開關。關閉後文章底部不顯示任何評論區",
+        "title": "啟用評論"
+      },
+      "artalk": {
+        "title": "Artalk 評論",
+        "desc": "使用獨立的 Artalk 服務承載評論。Artalk 可自架或用官方 Docker 映像檔，評論資料存在它那邊，與文章資料相互獨立。",
+        "provider": "評論後端",
+        "provider_desc": "選擇由 Artalk 還是 Rin 內建評論來處理評論功能",
+        "provider_options": {
+          "artalk": "Artalk",
+          "builtin": "Rin 內建"
+        },
+        "server": {
+          "title": "Artalk 伺服器位址",
+          "desc": "Artalk 服務端位址，需帶協定與連接埠。例如 http://192.168.21.250:23366 。結尾不必寫斜線。"
+        },
+        "site": {
+          "title": "站點名",
+          "desc": "在 Artalk 後台設定的站點名。留空則使用本站名稱，需與 Artalk 中的設定一致。"
+        },
+        "page_prefix": {
+          "title": "頁面鍵前綴",
+          "desc": "決定評論在 Artalk 中掛在哪個頁面下，預設 /post。同一篇文章的評論歸屬由它決定，改動會導致看不到歷史評論。"
+        },
+        "dark_mode": {
+          "title": "深色模式",
+          "desc": "inherit 表示跟隨本站主題，light 固定淺色，dark 固定深色"
+        },
+        "test": "測試連線",
+        "testing": "測試中...",
+        "test_success": "連線成功",
+        "test_failed": "連線失敗",
+        "test_hint": "測試會向 Artalk 的 /api/v2/conf 發起請求，能回傳設定即視為連通",
+        "open_dashboard": "開啟 Artalk 後台",
+        "disabled_warning": "評論總開關目前關閉，以下設定儲存後不會立即生效。",
+        "trusted_domains_hint": "把本站網址加入 Artalk 信任網域（站點 → 修改 URL），否則瀏覽器會因跨網域被拒。儲存後需重新啟動 Artalk。"
       }
     },
     "counter": {

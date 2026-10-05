@@ -1,0 +1,79 @@
+# Rin + Artalk 一体化部署
+#
+# 把 Artalk 与 Rin 放在同一个 Docker 网络里，用服务名 artalk:23366 互相访问，
+# 这样不依赖宿主机 IP，容器重建后地址也不会变。
+#
+#   docker compose -f docker-compose.artalk.yml up -d
+#   Rin    → http://localhost:23365
+#   Artalk → http://localhost:23366
+#
+# 首次启动后创建 Artalk 管理员账号：
+#   docker exec -it rin-artalk artalk admin
+#
+# 然后在 Rin 的「设置 → 其他设置 → Artalk 评论」里把服务器地址填为
+# http://artalk:23366 （容器内地址），保存后评论区即可加载。
+# 浏览器端要能访问 Artalk 的静态资源，Rin 会自动把该地址写进前端配置。
+
+services:
+  rin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: rin:local
+    container_name: rin
+    restart: unless-stopped
+    ports:
+      - "${RIN_HOST_PORT:-23365}:23365"
+    # 可选，缺失时全部走 compose 里给的默认值
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      RIN_RUNTIME: ${RIN_RUNTIME:-local}
+      RIN_DATA_DIR: /app/data
+      RIN_CLIENT_DIST: /app/dist/client
+      BACKEND_PORT: "23365"
+      TZ: ${TZ:-Asia/Shanghai}
+    volumes:
+      - rin-data:/app/data
+    depends_on:
+      - artalk
+    networks:
+      - rin-net
+    healthcheck:
+      test:
+        - CMD
+        - bun
+        - -e
+        - "const r = await fetch('http://127.0.0.1:23365/api/config'); process.exit(r.status < 500 ? 0 : 1)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  artalk:
+    image: artalk/artalk-go:latest
+    container_name: rin-artalk
+    restart: unless-stopped
+    ports:
+      - "${ARTALK_HOST_PORT:-23366}:23366"
+    volumes:
+      - artalk-data:/data
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      # Artalk 后台里的站点名与站点地址，改动后需在 Artalk 后台同步
+      ATK_LOCALE: ${ATK_LOCALE:-zh-CN}
+      ATK_SITE_DEFAULT: ${ATK_SITE_DEFAULT:-Rin}
+      ATK_SITE_URL: ${ATK_SITE_URL:-http://localhost:23365}
+    networks:
+      - rin-net
+
+volumes:
+  rin-data:
+    driver: local
+  artalk-data:
+    driver: local
+
+networks:
+  rin-net:
+    driver: bridge

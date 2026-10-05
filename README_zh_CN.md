@@ -29,7 +29,7 @@ https://xeu.life
 - **自定义别名**：为文章设置友好的 URL，例如 `https://yourblog.com/about`。
 - **不公开文章**：可选择将文章隐藏于首页列表之外。
 - **友情链接**：添加友博客链接，后端每 20 分钟自动检查链接可用性并更新状态。
-- **评论系统**：支持回复评论，并具备评论删除管理功能。
+- **评论系统**：由 [Artalk](https://github.com/ArtalkJS/Artalk) 承载 —— 可自建、数据独立、带管理后台与 Markdown 支持。在设置页填入 Artalk 实例地址即可启用，原有内置评论保留为回退选项。
 - **Webhook 通知**：通过可配置的 Webhook 接收新评论的实时提醒。
 - **特色图片**：自动识别文章内首张图片，并将其作为列表页的封面图展示。
 - **标签解析**：输入如 `#博客 #Cloudflare` 的标签文本，自动解析并展示为标签。
@@ -56,6 +56,42 @@ bun run dev
 ```
 
 访问 http://localhost:5173 开始开发！
+
+### 本机部署（无需 Cloudflare）
+
+Rin 也可以完全跑在自己的机器上：数据用 SQLite，图片存本地磁盘，
+不需要 Cloudflare 账号，也不需要 wrangler。
+
+```bash
+bun install
+cp .env.example .env.local   # 设 RIN_RUNTIME=local 与一个 JWT_SECRET
+bun run setup:local          # 初始化数据库
+bun run start:local          # http://127.0.0.1:11498
+```
+
+也可以用 Supabase 同时承载数据（Postgres）与文件（S3 兼容端点）。
+完整说明见 [docs/LOCAL_DEPLOYMENT.md](./docs/LOCAL_DEPLOYMENT.md)，
+含三种运行时的对照表与已知差异。
+
+### Docker 部署
+
+```bash
+cp .env.docker.example .env    # 至少改掉 JWT_SECRET
+docker compose up -d --build
+```
+
+单容器、单端口，同时提供 API 与前端页面，数据存放在 `rin-data` 卷里。
+备份、反向代理、Supabase 模式、与 Artalk 同机部署见
+[docs/DOCKER_DEPLOYMENT.md](./docs/DOCKER_DEPLOYMENT.md)。
+
+### Artalk 评论
+
+评论由 [Artalk](https://github.com/ArtalkJS/Artalk) 承载 —— 可自建、数据独立、
+自带管理后台。在 **设置 → 其他设置 → Artalk 评论** 填入实例地址，
+点「测试连接」验证即可。原有内置评论保留为回退选项。
+
+服务器地址有个易踩的坑（浏览器能访问的地址与服务端能访问的地址未必相同），
+见 [docs/ARTALK.md](./docs/ARTALK.md)。
 
 ### 测试
 

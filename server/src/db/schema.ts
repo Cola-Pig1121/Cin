@@ -1,183 +1,52 @@
-import { relations, sql } from "drizzle-orm";
-import { index, integer, sqliteTable, text, unique } from "drizzle-orm/sqlite-core";
+// Schema 调度器
+//
+// 业务服务统一从 `../db/schema` 导入表对象，这里根据 RIN_RUNTIME 决定导出
+// SQLite 版还是 Postgres 版。之所以在这里转发而不是在调用点判断方言，
+// 是为了让上层 19 个引用 schema 的文件完全无需改动。
+//
+// 切换靠环境变量，因此必须在进程启动、任何 db 访问发生之前设置好 RIN_RUNTIME。
+//
+// 类型说明（重要）：
+// 两版 schema 的表名、列名、关系定义完全一致，运行时形状相同。但 drizzle 的
+// Column 类型带 `dialect: "sqlite" | "pg"` 字面量，如果直接用三元表达式，
+// 推断结果会变成 `SQLiteColumn | PgColumn` 联合类型，drizzle 的查询泛型会直接
+// 报 "not assignable to type SQLiteColumn"。
+//
+// 解决办法是 cast 而非联合：把 Postgres 侧对象断言为 SQLite 侧的结构类型。
+// 这样对外只暴露单一类型，推断完全正常；运行时仍按 RIN_RUNTIME 拿到对应实现。
+// 断言集中在这一个文件里，业务代码保持干净。
 
-const created_at = integer("created_at", { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull();
-const updated_at = integer("updated_at", { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull();
+import { resolveRuntimeKind } from "../runtime/types";
+import type * as SQLiteSchema from "./schema.sqlite";
+import * as sqliteSchema from "./schema.sqlite";
+import * as postgresSchema from "./schema.postgres";
 
-export const feeds = sqliteTable("feeds", {
-    id: integer("id").primaryKey(),
-    alias: text("alias"),
-    title: text("title"),
-    summary: text("summary").default("").notNull(),
-    ai_summary: text("ai_summary").default("").notNull(),
-    ai_summary_status: text("ai_summary_status").default("idle").notNull(),
-    ai_summary_error: text("ai_summary_error").default("").notNull(),
-    content: text("content").notNull(),
-    listed: integer("listed").default(1).notNull(),
-    draft: integer("draft").default(1).notNull(),
-    top: integer("top").default(0).notNull(),
-    uid: integer("uid").references(() => users.id).notNull(),
-    createdAt: created_at,
-    updatedAt: updated_at,
-}, (table) => ({
-    aliasIdx: index("feeds_alias_idx").on(table.alias),
-    visibilityOrderIdx: index("feeds_visibility_order_idx").on(
-        table.draft,
-        table.listed,
-        table.top,
-        table.createdAt,
-        table.updatedAt,
-    ),
-    uidIdx: index("feeds_uid_idx").on(table.uid),
-}));
-
-export const moments = sqliteTable("moments", {
-    id: integer("id").primaryKey(),
-    content: text("content").notNull(),
-    uid: integer("uid").references(() => users.id).notNull(),
-    createdAt: created_at,
-    updatedAt: updated_at
+const runtime = resolveRuntimeKind({
+    RIN_RUNTIME: typeof process !== "undefined" ? process.env.RIN_RUNTIME : undefined,
 });
 
-export const visits = sqliteTable("visits", {
-    id: integer("id").primaryKey(),
-    feedId: integer("feed_id").references(() => feeds.id, { onDelete: 'cascade' }).notNull(),
-    ip: text("ip").notNull(),
-    createdAt: created_at,
-}, (table) => ({
-    feedCreatedAtIdx: index("visits_feed_created_at_idx").on(table.feedId, table.createdAt),
-}));
+type Tables = typeof SQLiteSchema;
+type TableOf<K extends keyof Tables> = Tables[K];
 
-export const visitStats = sqliteTable("visit_stats", {
-    feedId: integer("feed_id").references(() => feeds.id, { onDelete: 'cascade' }).notNull().primaryKey(),
-    pv: integer("pv").default(0).notNull(),
-    hllData: text("hll_data").default("").notNull(),
-    updatedAt: updated_at,
-});
+/** 按运行时取表；两个分支断言到同一结构类型，保证对外类型唯一 */
+function pick<K extends keyof Tables>(key: K): TableOf<K> {
+    return (runtime === "supabase" ? postgresSchema[key] : sqliteSchema[key]) as TableOf<K>;
+}
 
-export const info = sqliteTable("info", {
-    key: text("key").notNull().unique(),
-    value: text("value").notNull(),
-});
+export const feeds = pick("feeds");
+export const moments = pick("moments");
+export const visits = pick("visits");
+export const visitStats = pick("visitStats");
+export const info = pick("info");
+export const friends = pick("friends");
+export const users = pick("users");
+export const comments = pick("comments");
+export const hashtags = pick("hashtags");
+export const feedHashtags = pick("feedHashtags");
+export const cache = pick("cache");
 
-export const friends = sqliteTable("friends", {
-    id: integer("id").primaryKey(),
-    name: text("name").notNull(),
-    desc: text("desc"),
-    avatar: text("avatar").notNull(),
-    url: text("url").notNull(),
-    uid: integer("uid").references(() => users.id, { onDelete: 'cascade' }).notNull(),
-    accepted: integer("accepted").default(0).notNull(),
-    health: text("health").default("").notNull(),
-    sort_order: integer("sort_order").default(0).notNull(),
-    createdAt: created_at,
-    updatedAt: updated_at,
-}, (table) => ({
-    acceptedOrderIdx: index("friends_accepted_order_idx").on(
-        table.accepted,
-        table.sort_order,
-        table.createdAt,
-    ),
-}));
-
-export const users = sqliteTable("users", {
-    id: integer("id").primaryKey(),
-    username: text("username").notNull(),
-    openid: text("openid").notNull(),
-    avatar: text("avatar"),
-    password: text("password"),
-    permission: integer("permission").default(0),
-    createdAt: created_at,
-    updatedAt: updated_at,
-}, (table) => ({
-    openidIdx: index("users_openid_idx").on(table.openid),
-}));
-
-export const comments = sqliteTable("comments", {
-    id: integer("id").primaryKey(),
-    feedId: integer("feed_id").references(() => feeds.id, { onDelete: 'cascade' }).notNull(),
-    userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
-    content: text("content").notNull(),
-    guestName: text("guest_name").default(""),
-    guestEmail: text("guest_email").default(""),
-    guestWebsite: text("guest_website").default(""),
-    approved: integer("approved").default(1).notNull(),
-    createdAt: created_at,
-    updatedAt: updated_at,
-}, (table) => ({
-    feedCreatedAtIdx: index("comments_feed_created_at_idx").on(table.feedId, table.createdAt),
-}));
-
-export const hashtags = sqliteTable("hashtags", {
-    id: integer("id").primaryKey(),
-    name: text("name").notNull(),
-    createdAt: created_at,
-    updatedAt: updated_at,
-}, (table) => ({
-    nameIdx: index("hashtags_name_idx").on(table.name),
-}));
-
-export const feedHashtags = sqliteTable("feed_hashtags", {
-    feedId: integer("feed_id").references(() => feeds.id, { onDelete: 'cascade' }).notNull(),
-    hashtagId: integer("hashtag_id").references(() => hashtags.id, { onDelete: 'cascade' }).notNull(),
-    createdAt: created_at,
-    updatedAt: updated_at,
-}, (table) => ({
-    feedHashtagIdx: index("feed_hashtags_feed_hashtag_idx").on(table.feedId, table.hashtagId),
-    hashtagFeedIdx: index("feed_hashtags_hashtag_feed_idx").on(table.hashtagId, table.feedId),
-}));
-
-export const cache = sqliteTable("cache", {
-    id: integer("id").primaryKey(),
-    key: text("key").notNull(),
-    value: text("value").notNull(),
-    type: text("type").default("cache").notNull(),
-    createdAt: created_at,
-    updatedAt: updated_at,
-}, (table) => ({
-    // 复合唯一约束：key + type
-    keyTypeUnique: unique().on(table.key, table.type),
-    typeKeyIdx: index("cache_type_key_idx").on(table.type, table.key),
-}));
-
-export const feedsRelations = relations(feeds, ({ many, one }) => ({
-    hashtags: many(feedHashtags),
-    user: one(users, {
-        fields: [feeds.uid],
-        references: [users.id],
-    }),
-    comments: many(comments),
-}));
-
-export const momentsRelations = relations(moments, ({ one }) => ({
-    user: one(users, {
-        fields: [moments.uid],
-        references: [users.id],
-    })
-}));
-
-export const commentsRelations = relations(comments, ({ one }) => ({
-    feed: one(feeds, {
-        fields: [comments.feedId],
-        references: [feeds.id],
-    }),
-    user: one(users, {
-        fields: [comments.userId],
-        references: [users.id],
-    }),
-}));
-
-export const hashtagsRelations = relations(hashtags, ({ many }) => ({
-    feeds: many(feedHashtags),
-}));
-
-export const feedHashtagsRelations = relations(feedHashtags, ({ one }) => ({
-    feed: one(feeds, {
-        fields: [feedHashtags.feedId],
-        references: [feeds.id],
-    }),
-    hashtag: one(hashtags, {
-        fields: [feedHashtags.hashtagId],
-        references: [hashtags.id],
-    }),
-}));
+export const feedsRelations = pick("feedsRelations");
+export const momentsRelations = pick("momentsRelations");
+export const commentsRelations = pick("commentsRelations");
+export const hashtagsRelations = pick("hashtagsRelations");
+export const feedHashtagsRelations = pick("feedHashtagsRelations");

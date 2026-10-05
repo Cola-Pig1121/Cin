@@ -103,7 +103,15 @@
     "guest_name_required": "昵称不能为空",
     "guest_name_placeholder": "昵称（必填）",
     "guest_email_placeholder": "邮箱（可选）",
-    "guest_website_placeholder": "网站（可选）"
+    "guest_website_placeholder": "网站（可选）",
+    "artalk": {
+      "no_server": "尚未配置 Artalk 服务器地址",
+      "load_failed": "Artalk 客户端加载失败",
+      "configure_hint": "请在「设置 → 其他设置 → Artalk 评论」中填写服务器地址",
+      "empty": "还没有评论，来抢沙发吧",
+      "fetch_failed": "评论区加载失败",
+      "trusted_domains_hint": "若显示「Failed to fetch」，需把本站地址加入 Artalk 后台的信任域（站点 → 修改 URL），保存后重启 Artalk。"
+    }
   },
   "comparison": "对比",
   "confirm": "确认",
@@ -297,8 +305,42 @@
     },
     "comment": {
       "enable": {
-        "desc": "开启/关闭文章底部评论入口与评论区",
+        "desc": "总开关。关闭后文章底部不显示任何评论区",
         "title": "启用评论"
+      },
+      "artalk": {
+        "title": "Artalk 评论",
+        "desc": "使用独立的 Artalk 服务承载评论。Artalk 可自建或用官方 Docker 镜像，评论数据存在它那边，与文章数据相互独立。",
+        "provider": "评论后端",
+        "provider_desc": "选择由 Artalk 还是 Rin 内置评论来处理评论功能",
+        "provider_options": {
+          "artalk": "Artalk",
+          "builtin": "Rin 内置"
+        },
+        "server": {
+          "title": "Artalk 服务器地址",
+          "desc": "Artalk 服务端地址，需带协议与端口。例如 http://192.168.21.250:23366 。末尾不必写斜杠。"
+        },
+        "site": {
+          "title": "站点名",
+          "desc": "在 Artalk 后台配置的站点名。留空则使用本站名称，需与 Artalk 中的配置一致。"
+        },
+        "page_prefix": {
+          "title": "页面键前缀",
+          "desc": "决定评论在 Artalk 中挂在哪个页面下，默认 /post。同一篇文章的评论归属由它决定，改动会导致看不到历史评论。"
+        },
+        "dark_mode": {
+          "title": "深色模式",
+          "desc": "inherit 表示跟随本站主题，light 固定浅色，dark 固定深色"
+        },
+        "test": "测试连接",
+        "testing": "测试中...",
+        "test_success": "连接成功",
+        "test_failed": "连接失败",
+        "test_hint": "测试会向 Artalk 的 /api/v2/conf 发起请求，能返回配置即视为连通",
+        "open_dashboard": "打开 Artalk 后台",
+        "disabled_warning": "评论总开关当前关闭，以下配置保存后不会立即生效。",
+        "trusted_domains_hint": "把本站地址加入 Artalk 信任域（站点 → 修改 URL），否则浏览器会因跨域被拒。保存后需重启 Artalk。"
       }
     },
     "counter": {

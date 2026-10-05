@@ -536,6 +536,16 @@ class ConfigAPI {
   }): Promise<ApiResponse<{ success: boolean; error?: string; details?: string }>> {
     return this.http.post("/api/config/test-webhook", body);
   }
+
+  /**
+   * POST /api/config/test-artalk
+   * 从服务端探测 Artalk 连通性，能验证浏览器访问不到的内网地址
+   */
+  async testArtalk(body: {
+    server?: string;
+  }): Promise<ApiResponse<{ success: boolean; error?: string; site?: string; hasFrontendConf?: boolean }>> {
+    return this.http.post("/api/config/test-artalk", body);
+  }
 }
 
 /**

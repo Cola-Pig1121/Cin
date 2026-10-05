@@ -13,6 +13,12 @@ export const CLIENT_CONFIG_DEFAULTS = new Map(
     "feed.card_variant": "default",
     "theme.color": "#fc466b",
     "comment.enabled": true,
+    // 评论后端：artalk（默认）| builtin（Rin 内置）
+    "comment.provider": "artalk",
+    "comment.artalk.server": "",
+    "comment.artalk.site": "",
+    "comment.artalk.page_prefix": "/post",
+    "comment.artalk.dark_mode": "inherit",
     "login.enabled": true,
     "site.name": "Rin",
     "site.description": "A lightweight personal blogging system",

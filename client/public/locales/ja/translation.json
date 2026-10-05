@@ -103,7 +103,15 @@
     "guest_name_required": "ゲスト名は必須です",
     "guest_name_placeholder": "名前（必須）",
     "guest_email_placeholder": "メール（任意）",
-    "guest_website_placeholder": "ウェブサイト（任意）"
+    "guest_website_placeholder": "ウェブサイト（任意）",
+    "artalk": {
+      "no_server": "Artalk サーバーの URL が未設定です",
+      "load_failed": "Artalk クライアントの読み込みに失敗しました",
+      "configure_hint": "「設定 → その他 → Artalk コメント」でサーバーを設定してください",
+      "empty": "まだコメントはありません。最初の一言をどうぞ",
+      "fetch_failed": "コメントの読み込みに失敗しました",
+      "trusted_domains_hint": "「Failed to fetch」と表示される場合、本サイトの URL を Artalk の信頼ドメイン（サイト → URLを変更）に追加し、Artalk を再起動してください。"
+    }
   },
   "comparison": "対比",
   "confirm": "確認",
@@ -288,8 +296,42 @@
     },
     "comment": {
       "enable": {
-        "desc": "記事下部のコメント入り口とコメントエリアの開閉",
-        "title": "コメントを有効にする"
+        "desc": "全体のスイッチ。オフにすると記事の下にコメント欄を表示しません",
+        "title": "コメントを有効化"
+      },
+      "artalk": {
+        "title": "Artalk コメント",
+        "desc": "コメントを独立した Artalk サービスへ委譲します。自分でホストするか公式 Docker イメージを使い、コメントデータは記事のデータとは別に保存されます。",
+        "provider": "コメントバックエンド",
+        "provider_desc": "コメントを Artalk と Rin 内蔵のどちらで処理するか選びます",
+        "provider_options": {
+          "artalk": "Artalk",
+          "builtin": "Rin 内蔵"
+        },
+        "server": {
+          "title": "Artalk サーバー URL",
+          "desc": "スキームとポートを含めた Artalk サーバーのアドレス。例: http://192.168.21.250:23366 。末尾のスラッシュは不要です。"
+        },
+        "site": {
+          "title": "サイト名",
+          "desc": "Artalk ダッシュボードで設定したサイト名。空ならこのサイトの名前を使い、Artalk の設定と一致させる必要があります。"
+        },
+        "page_prefix": {
+          "title": "ページキーの接頭辞",
+          "desc": "Artalk 上でコメントが紐づくページを決めます。初期値は /post。変更すると過去のコメントが見えなくなります。"
+        },
+        "dark_mode": {
+          "title": "ダークモード",
+          "desc": "inherit はこのサイトのテーマに追従、light と dark は固定表示です"
+        },
+        "test": "接続テスト",
+        "testing": "テスト中...",
+        "test_success": "接続に成功しました",
+        "test_failed": "接続に失敗しました",
+        "test_hint": "Artalk の /api/v2/conf にリクエストし、応答があれば接続済みとみなします",
+        "open_dashboard": "Artalk ダッシュボードを開く",
+        "disabled_warning": "コメントの全体スイッチがオフです。以下を保存しても反映されません。",
+        "trusted_domains_hint": "本サイトの URL を Artalk の信頼ドメイン（サイト → URLを変更）に追加してください。追加しないとブラウザが CORS で遮断されます。保存後は Artalk を再起動してください。"
       }
     },
     "counter": {

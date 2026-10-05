@@ -1,0 +1,41 @@
+# 依赖与构建产物由 Dockerfile 内部生成，不需要从上下文带进去
+node_modules
+**/node_modules
+
+# 构建输出由构建阶段生成
+dist
+**/dist
+.turbo
+**/.turbo
+.vite
+**/.vite
+
+# 版本控制与编辑器
+.git
+.gitignore
+.github
+.vscode
+.idea
+*.md
+!README.md
+
+# 本地数据，绝不能进镜像
+data
+.env
+.env.local
+.env.*.local
+.dev.vars
+*.db
+*.db-shm
+*.db-wal
+
+# Cloudflare 部署产物，本地运行不需要
+wrangler.toml
+.wrangler
+
+# 日志与临时文件
+*.log
+logs
+coverage
+**/coverage
+.DS_Store

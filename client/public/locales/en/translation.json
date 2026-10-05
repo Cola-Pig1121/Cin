@@ -103,7 +103,15 @@
     "guest_name_required": "Guest name is required",
     "guest_name_placeholder": "Name (required)",
     "guest_email_placeholder": "Email (optional)",
-    "guest_website_placeholder": "Website (optional)"
+    "guest_website_placeholder": "Website (optional)",
+    "artalk": {
+      "no_server": "Artalk server URL is not configured yet",
+      "load_failed": "Failed to load the Artalk client",
+      "configure_hint": "Set it in Settings → Other → Artalk Comments",
+      "empty": "No comments yet, be the first to reply",
+      "fetch_failed": "Failed to load comments",
+      "trusted_domains_hint": "If you see \"Failed to fetch\", add this site URL to Artalk's trusted domains (Site → Modify URL), then restart Artalk."
+    }
   },
   "comparison": "Comparison",
   "confirm": "Confirm",
@@ -297,8 +305,42 @@
     },
     "comment": {
       "enable": {
-        "desc": "Open/close the comment entry and comment area at the bottom of the article",
-        "title": "Enable Comments"
+        "desc": "Master switch. When off, no comment section is shown under posts",
+        "title": "Enable comments"
+      },
+      "artalk": {
+        "title": "Artalk comments",
+        "desc": "Delegate comments to a standalone Artalk service. Run it yourself or use the official Docker image; comment data lives there, separate from your posts.",
+        "provider": "Comment backend",
+        "provider_desc": "Choose whether Artalk or Rin's built-in comments handle this section",
+        "provider_options": {
+          "artalk": "Artalk",
+          "builtin": "Rin built-in"
+        },
+        "server": {
+          "title": "Artalk server URL",
+          "desc": "The Artalk server address including scheme and port, e.g. http://192.168.21.250:23366. No trailing slash needed."
+        },
+        "site": {
+          "title": "Site name",
+          "desc": "The site name configured in the Artalk dashboard. Defaults to this site's name; it must match your Artalk setup."
+        },
+        "page_prefix": {
+          "title": "Page key prefix",
+          "desc": "Decides which page comments attach to in Artalk. Defaults to /post. Changing it makes existing comments appear to vanish."
+        },
+        "dark_mode": {
+          "title": "Dark mode",
+          "desc": "inherit follows this site's theme, light and dark pin the appearance"
+        },
+        "test": "Test connection",
+        "testing": "Testing...",
+        "test_success": "Connection successful",
+        "test_failed": "Connection failed",
+        "test_hint": "The test requests /api/v2/conf from Artalk; any valid response counts as reachable",
+        "open_dashboard": "Open Artalk dashboard",
+        "disabled_warning": "The comments master switch is off, so these settings will not take effect until you enable it.",
+        "trusted_domains_hint": "Add this site URL to Artalk trusted domains (Site → Modify URL), otherwise the browser is blocked by CORS. Restart Artalk after saving."
       }
     },
     "counter": {
