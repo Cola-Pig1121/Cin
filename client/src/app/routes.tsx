@@ -190,8 +190,15 @@ function AppRoute({
   const siteConfig = useSiteConfig();
   const { t } = useTranslation();
 
-  const content =
-    requirePermission && !profile?.permission ? <ErrorPage error={t("error.permission_denied")} /> : children;
+  // profile 有三态：undefined=加载中、null=未登录、对象=已登录。
+  // **加载中不能判为「无权限」** —— 那会让管理员一进后台就看到
+  // 「权限不足」闪一下，等 profile 到达后才切换成正常内容。
+  const isProfileLoading = profile === undefined;
+  const content = requirePermission && !isProfileLoading && !profile?.permission ? (
+    <ErrorPage error={t("error.permission_denied")} />
+  ) : (
+    children
+  );
 
   return (
     <Route path={path}>
@@ -251,8 +258,15 @@ function AdminRoute({
 }) {
   const profile = useContext(ProfileContext);
   const { t } = useTranslation();
-  const content =
-    requirePermission && !profile?.permission ? <ErrorPage error={t("error.permission_denied")} /> : children;
+  // profile 有三态：undefined=加载中、null=未登录、对象=已登录。
+  // **加载中不能判为「无权限」** —— 那会让管理员一进后台就看到
+  // 「权限不足」闪一下，等 profile 到达后才切换成正常内容。
+  const isProfileLoading = profile === undefined;
+  const content = requirePermission && !isProfileLoading && !profile?.permission ? (
+    <ErrorPage error={t("error.permission_denied")} />
+  ) : (
+    children
+  );
 
   return (
     <Route path={path}>

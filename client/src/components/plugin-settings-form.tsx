@@ -1,5 +1,5 @@
 import type { PluginSetting, PluginSettingField } from "../plugins/registry";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { client } from "../app/runtime";
 import { apiErrorText } from "../utils/api-error";
 import { ImageWithFallback } from "./image-with-fallback";
@@ -33,16 +33,39 @@ export function PluginSettingsForm({
   initialValues: Record<string, string>;
   onSaved: (values: Record<string, string>) => void;
 }) {
-  const [values, setValues] = useState<Record<string, string>>(() => {
-    // 服务端已有的值优先；没有才用声明的默认值
-    const initial: Record<string, string> = {};
-    for (const setting of settings) {
-      initial[setting.key] = initialValues[setting.key] ?? initialValue(setting);
-    }
-    return initial;
-  });
+  const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+
+  /**
+   * 服务端数据到达后同步进表单。
+   *
+   * 不能靠 `useState(() => ...)` 的初始化函数 —— 它**只在首次挂载时跑一次**，
+   * 而设置是异步加载的：首次挂载时 `initialValues` 还是空，
+   * 等数据到达时初始化函数早已错过，表单就一直显示默认值（表现为「设置丢了」）。
+   *
+   * 用 `loaded` 标记只同步一次，避免用户编辑到一半被服务端数据覆盖。
+   */
+  const loadedRef = useRef(false);
+  useEffect(() => {
+    if (loadedRef.current) return;
+
+    const hasAnyValue = Object.values(initialValues).some((v) => v !== undefined && v !== '');
+    // 空对象说明还没加载完，等下一次
+    if (Object.keys(initialValues).length === 0) return;
+
+    loadedRef.current = true;
+    setValues(() => {
+      const next: Record<string, string> = {};
+      for (const setting of settings) {
+        next[setting.key] = initialValues[setting.key] ?? initialValue(setting);
+      }
+      return next;
+    });
+
+    // 数据全空时也要标记完成，否则表单永远停在未加载状态
+    if (!hasAnyValue) loadedRef.current = true;
+  }, [initialValues, settings]);
   /**
    * 持久错误提示。
    *
