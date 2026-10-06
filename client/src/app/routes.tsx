@@ -33,7 +33,10 @@ import { TimelinePage } from "../page/timeline";
 import { WritingPage } from "../page/writing";
 import { ProfileContext } from "../state/profile";
 import { listPluginPages, type PluginPage } from "../plugins/registry";
-import "../../plugins";
+// 副作用导入：执行注册，把插件页面注入下面的路由表。
+// 入口是 src/plugins/index.ts（不是 client/plugins/ —— 那里只放各插件的实现，
+// 没有 index 文件，直接导入目录会解析失败）。
+import "../plugins";
 import { tryInt } from "../utils/int";
 import { useTranslation } from "react-i18next";
 
