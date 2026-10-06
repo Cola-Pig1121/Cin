@@ -20,9 +20,12 @@ const plugin: RinPlugin = {
     author: 'Rin',
   },
 
-  // 只有这两个键会被 /api/plugins/photo-album/config 返回。
+  // 只有这三个键会被 /api/plugins/photo-album/config 返回。
   // 加新键时记得同步更新 client/plugins/photo-album/index.tsx 的 settings 声明。
   publicSettings: ['images', 'interval', 'height'],
+
+  // 全部设置键（含非公开的 captions）。管理员设置页靠它逐键读回当前值。
+  settingKeys: ['images', 'captions', 'interval', 'height'],
 };
 
 export default plugin;

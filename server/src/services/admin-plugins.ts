@@ -55,7 +55,6 @@ function adminJson(handler: (c: AppContext) => Promise<Response> | Response) {
 
 export function AdminPluginService(): Hono {
   const app = new Hono();
-
   /**
    * GET /api/admin/plugins
    *
@@ -174,21 +173,26 @@ export function AdminPluginService(): Hono {
     const name = c.req.param('name');
     const serverConfig = c.get('serverConfig');
 
-    // 一次读回该插件的所有配置，避免逐项往返。
-    // 必须用 getByPrefix —— `get(key)` 是精确匹配，
-    // 传 "album." 只会去查一个名字真叫 "album." 的键。
-    // 声明为可选，缺失时降级为空对象而不是抛错。
-    const rows = (await serverConfig.getByPrefix?.(`${name}.`)) ?? [];
-    const prefix = `${name}.`;
+    /**
+     * 逐键读取，不用 getByPrefix。
+     *
+     * `getByPrefix` 依赖内存 cache 快照，在「刚由 PUT 写入、快照尚未刷新」
+     * 的窗口内会读不到值 —— 表现就是「保存成功了但设置页打开是空的」。
+     * `get(key)` 直读存储，是唯一可靠的方式。
+     *
+     * 代价是要先知道有哪些键。这里用两处来源合并：
+     * 1. 服务端插件声明的 publicSettings（权威，反映真实的公开键）
+     * 2. 前端插件声明的设置项 —— 服务端拿不到时兜底
+     */
+    // 键名由插件自己声明（server/plugins/*/index.ts 的 settingKeys）。
+    // 不在服务端猜一份清单 —— 插件改名/加字段时清单会立刻过期。
+    const keys = pluginRegistry.settingKeysOf(name);
 
     const values: Record<string, string> = {};
-    for (const row of rows) {
-      // 防御：存储层的 getByPrefix 可能有实现返回的不是 [key, value]。
-      // 这里宁可跳过也不要因为一条脏数据让整个接口 500。
-      if (!Array.isArray(row) || row.length < 2) continue;
-      const [key, value] = row;
-      if (typeof key === 'string' && key.startsWith(prefix) && value !== undefined) {
-        values[key.slice(prefix.length)] = String(value);
+    for (const key of keys) {
+      const value = await serverConfig.get(`${name}.${key}`);
+      if (value !== null && value !== undefined) {
+        values[key] = String(value);
       }
     }
 

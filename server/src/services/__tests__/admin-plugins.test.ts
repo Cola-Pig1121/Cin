@@ -226,6 +226,15 @@ describe('插件启停', () => {
   // ===== 插件设置 =====
 
   describe('插件设置读写', () => {
+    // 键名由插件自己声明，服务端不猜清单
+    beforeEach(() => {
+      pluginRegistry.reset();
+      pluginRegistry.register({
+        manifest: { name: 'album', displayName: 'Album', version: '1.0.0' },
+        publicSettings: ['images'],
+        settingKeys: ['images', 'captions', 'interval', 'height'],
+      });
+    });
     it('should reject anonymous and non-admin callers', async () => {
       const anon = await app.request('/any/settings', { method: 'GET' }, env);
       expect(anon.status).toBe(401);
@@ -288,6 +297,44 @@ describe('插件启停', () => {
       }, env);
 
       expect(await serverConfig.get('album.images')).toBe('a.jpg,b.jpg');
+    });
+
+    it('should read back values immediately after saving', async () => {
+      // 回归：之前用 getByPrefix 读回，依赖内存快照 ——
+      // 刚 PUT 完就 GET 时快照还没更新，设置页显示为空。
+      // 现在改成逐键 get(key)，与公开配置接口走同一条已验证的路径。
+      await app.request('/album/settings', {
+        method: 'PUT',
+        headers: { ...asAdmin, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: { images: 'https://x.com/a.jpg' } }),
+      }, env);
+
+      const res = await app.request('/album/settings', {
+        method: 'GET',
+        headers: asAdmin,
+      }, env);
+
+      expect(res.status).toBe(200);
+      const body = await res.json() as any;
+      expect(body.data.values.images).toBe('https://x.com/a.jpg');
+    });
+
+    it('should return non-public settings to the admin settings page', async () => {
+      // captions 不在 publicSettings 里（不下发给浏览器），
+      // 但管理员设置页必须能看到它
+      await app.request('/album/settings', {
+        method: 'PUT',
+        headers: { ...asAdmin, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: { captions: '说明一|说明二' } }),
+      }, env);
+
+      const res = await app.request('/album/settings', {
+        method: 'GET',
+        headers: asAdmin,
+      }, env);
+
+      const body = await res.json() as any;
+      expect(body.data.values.captions).toBe('说明一|说明二');
     });
 
     it('should reject unserializable values', async () => {

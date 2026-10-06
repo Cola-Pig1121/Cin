@@ -213,6 +213,20 @@ export interface RinPlugin extends PluginHooks {
    * 得自己提供 API，或把设置放在 clientConfig 里。
    */
   publicSettings?: string[];
+
+  /**
+   * 该插件的全部设置键（含非公开的）。
+   *
+   * 与 `publicSettings` 的区别：publicSettings 决定哪些能下发到浏览器，
+   * 而这份是给**管理员设置页**用来读回所有值的。
+   *
+   * 为什么需要它：设置页要显示每个字段的当前值，而配置只能按精确键读取
+   * （`get(key)` 精确匹配，前缀查询在刚写入时读不到）。
+   * 服务端若不知道有哪些键，就没法逐个读回来。
+   *
+   * 通常与前端 `settings` 声明的 `key` 一一对应。
+   */
+  settingKeys?: string[];
 }
 
 /**
@@ -227,6 +241,8 @@ export interface RegisteredPlugin {
   hooks: PluginHooks;
   /** 声明为可公开的配置键。供前端的插件组件读取自身设置 */
   publicSettings: string[];
+  /** 该插件的全部设置键（含非公开），供管理员设置页逐键读回 */
+  settingKeys: string[];
   status: 'enabled' | 'disabled' | 'error';
   /** 加载或 setup 失败的原因。status 为 'error' 时非空 */
   error?: string;

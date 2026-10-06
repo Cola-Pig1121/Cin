@@ -165,6 +165,17 @@ export class PluginRegistry {
   }
 
   /**
+   * 找出插件的全部设置键（含非公开）。
+   *
+   * 设置页靠它逐键 `get(key)` 读回当前值 —— 配置文件只能精确匹配读取，
+   * 不知道键名就没法取。
+   */
+  settingKeysOf(name: string): string[] {
+    const entry = this.plugins.find((p) => p.manifest.name === name);
+    return entry?.settingKeys ?? [];
+  }
+
+  /**
    * 注册一个插件。
    *
    * 会先做基本校验：manifest.name 必须合法且不重复。
@@ -183,6 +194,7 @@ export class PluginRegistry {
       hooks: stripManifest(plugin),
       // publicSettings 属于清单的一部分，不进 hooks
       publicSettings: plugin.publicSettings ?? [],
+      settingKeys: plugin.settingKeys ?? plugin.publicSettings ?? [],
       status: 'enabled',
     });
   }
