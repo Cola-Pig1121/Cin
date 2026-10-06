@@ -43,6 +43,14 @@ export function PluginSettingsForm({
   });
   const [saving, setSaving] = useState(false);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+  /**
+   * 持久错误提示。
+   *
+   * 之前只用 `window.alert` 报错，上传失败时弹窗一闪而过，
+   * 用户只看到「图片没加进去」却不知道为什么。
+   * 尤其存储服务不可用（如 Supabase 530）时，alert 容易被忽略。
+   */
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const setValue = useCallback((key: string, value: string) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -50,11 +58,12 @@ export function PluginSettingsForm({
 
   async function save() {
     setSaving(true);
+    setErrorMessage(null);
     const { error } = await client.adminPlugin.saveSettings(pluginName, values);
     setSaving(false);
 
     if (error) {
-      window.alert(apiErrorText(error));
+      setErrorMessage(apiErrorText(error));
       return;
     }
     onSaved(values);
@@ -62,13 +71,19 @@ export function PluginSettingsForm({
 
   async function uploadImage(settingKey: string, file: File) {
     setUploadingKey(settingKey);
+    setErrorMessage(null);
 
     // 传 key 让存储按插件名归类，方便日后清理
     const { data, error } = await client.storage.upload(file, `${pluginName}/${file.name}`);
     setUploadingKey(null);
 
     if (error || !data?.url) {
-      window.alert(apiErrorText({ value: error?.value ?? 'Upload failed' } as never));
+      // 明确区分「请求失败」与「返回了但没有 url」——
+      // 后者通常是存储服务异常（5xx），用户需要知道不是自己操作错了
+      const message = error
+        ? apiErrorText(error)
+        : '图片上传失败：存储服务没有返回图片地址。若刚配置完存储，可能是服务尚未就绪，或图片存储后端当前不可用';
+      setErrorMessage(message);
       return;
     }
 
@@ -80,6 +95,13 @@ export function PluginSettingsForm({
 
   return (
     <div className="flex flex-col gap-5">
+      {/* 持久错误提示：不用 alert，避免一闪而过被忽略 */}
+      {errorMessage && (
+        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+          {errorMessage}
+        </div>
+      )}
+
       {settings.map((setting) => (
         <SettingField
           key={setting.key}
@@ -100,8 +122,7 @@ export function PluginSettingsForm({
         >
           {saving ? '保存中…' : '保存设置'}
         </button>
-      </div>
-    </div>
+      </div>    </div>
   );
 }
 
@@ -276,6 +297,14 @@ function ImageListInput({
             </div>
           ))}
         </div>
+      )}
+
+      {/* 空状态提示：没有图片时插件不会显示任何东西 */}
+      {urls.length === 0 && (
+        <p className="rounded-lg bg-secondary p-3 text-xs text-neutral-600 dark:text-neutral-300">
+          还没有添加图片。保存后若前台没有显示轮播，多半是这里还是空的 ——
+          请先上传图片或填写图片网址。
+        </p>
       )}
 
       {/* 上传 */}

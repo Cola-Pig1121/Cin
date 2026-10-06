@@ -182,7 +182,11 @@ export function AdminPluginService(): Hono {
     const prefix = `${name}.`;
 
     const values: Record<string, string> = {};
-    for (const [key, value] of rows) {
+    for (const row of rows) {
+      // 防御：存储层的 getByPrefix 可能有实现返回的不是 [key, value]。
+      // 这里宁可跳过也不要因为一条脏数据让整个接口 500。
+      if (!Array.isArray(row) || row.length < 2) continue;
+      const [key, value] = row;
       if (typeof key === 'string' && key.startsWith(prefix) && value !== undefined) {
         values[key.slice(prefix.length)] = String(value);
       }

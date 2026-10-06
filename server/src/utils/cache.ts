@@ -327,7 +327,14 @@ export class CacheImpl {
         return this.cache.get(key);
     }
 
-    async getByPrefix(prefix: string): Promise<any[]> {
+    /**
+     * 按前缀查键值对。
+     *
+     * **必须返回 `[key, value]` 元组**，与 DatabaseStorageProvider 一致。
+     * 之前这里只返回 value，导致调用方按 `[, value]` 解构时
+     * 在 database 存储下拿不到 key（进而 500）。
+     */
+    async getByPrefix(prefix: string): Promise<Array<[string, any]>> {
         if (!(await this.isEnabled())) {
             return [];
         }
@@ -337,15 +344,15 @@ export class CacheImpl {
             for (const [key, value] of entries) {
                 this.cache.set(key, value);
             }
-            return entries.map(([, value]) => value);
+            return entries;
         }
         if (!this.loaded) {
             await this.load();
         }
-        const result = [];
-        for (let key of this.cache.keys()) {
+        const result: Array<[string, any]> = [];
+        for (const [key, value] of this.cache.entries()) {
             if (key.startsWith(prefix)) {
-                result.push(this.cache.get(key));
+                result.push([key, value]);
             }
         }
         return result;

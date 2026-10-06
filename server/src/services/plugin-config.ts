@@ -43,7 +43,7 @@ export function PluginConfigService(): Hono {
     const values: Record<string, string> = {};
 
     // 逐键读取。配置量很小（一个插件最多十几个键），
-    // 不值得为它引入批量读接口。
+    // 不值得为它引入批量读接口 —— 也避开了 getByPrefix 的实现差异。
     for (const key of keys) {
       // 只读插件自己声明过的键，杜绝越权读取其他配置
       const value = await serverConfig.get(`${name}.${key}`);
