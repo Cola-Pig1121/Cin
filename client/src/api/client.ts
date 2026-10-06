@@ -33,6 +33,7 @@ import type {
   AdminUserDeleteResponse,
   AdminPluginListResponse,
   AdminPluginToggleResponse,
+  PluginSettingsResponse,
   Friend,
   FriendListResponse,
   CreateFriendRequest,
@@ -508,6 +509,19 @@ class AdminPluginAPI {
     return this.http.put<AdminPluginToggleResponse>(API_PATHS.ADMIN_PLUGIN_TOGGLE(name), {
       enabled,
     });
+  }
+
+  // GET /api/admin/plugins/:name/settings
+  async getSettings(name: string): Promise<ApiResponse<PluginSettingsResponse>> {
+    return this.http.get<PluginSettingsResponse>(API_PATHS.ADMIN_PLUGIN_SETTINGS(name));
+  }
+
+  // PUT /api/admin/plugins/:name/settings — 批量保存
+  async saveSettings(
+    name: string,
+    values: Record<string, string>,
+  ): Promise<ApiResponse<{ success: boolean; data: { name: string; values: Record<string, string> } }>> {
+    return this.http.put(API_PATHS.ADMIN_PLUGIN_SETTINGS(name), { values });
   }
 }
 

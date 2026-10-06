@@ -7,6 +7,7 @@ import { client } from "../app/runtime";
 import { useApiResource } from "../hooks/use-api-resource";
 import { useSiteConfig } from "../hooks/useSiteConfig";
 import { apiErrorText } from "../utils/api-error";
+import { findPluginSettings } from "../plugins/registry";
 
 /**
  * 插件管理页。
@@ -91,6 +92,7 @@ export function AdminPluginsPage() {
           key={plugin.name}
           plugin={plugin}
           busy={busyName === plugin.name}
+          hasSettings={findPluginSettings(plugin.name).length > 0}
           onToggle={() => toggle(plugin)}
         />
       ))}
@@ -110,10 +112,13 @@ export function AdminPluginsPage() {
 function PluginRow({
   plugin,
   busy,
+  hasSettings,
   onToggle,
 }: {
   plugin: AdminPluginItem;
   busy: boolean;
+  /** 该插件是否声明了设置项。没有就不显示「设置」按钮 */
+  hasSettings: boolean;
   onToggle: () => void;
 }) {
   const { t } = useTranslation();
@@ -147,7 +152,15 @@ function PluginRow({
           </div>
 
           {/* 出错的插件不能切换：它没跑起来，启用也不会自动修好 */}
-          <div className="shrink-0">
+          <div className="flex shrink-0 flex-row gap-2">
+            {hasSettings && (
+              <a
+                href={`/admin/plugins/${plugin.name}/settings`}
+                className="rounded-full border border-black/10 bg-secondary px-4 py-2 text-sm transition-colors hover:bg-w dark:border-white/10"
+              >
+                {t("plugins.settings.action")}
+              </a>
+            )}
             <button
               type="button"
               onClick={onToggle}

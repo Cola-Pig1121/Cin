@@ -162,7 +162,124 @@ export function AdminPluginService(): Hono {
     });
   }));
 
+  /**
+   * GET /api/admin/plugins/:name/settings
+   *
+   * 读某个插件的全部设置项。
+   *
+   * **不校验插件是否存在** —— 设置项由前端插件声明（`client/plugins/*`），
+   * 服务端只负责存取 `{插件名}.{键}`。这样纯前端的插件也能用设置页。
+   */
+  app.get('/:name/settings', adminJson(async (c: AppContext) => {
+    const name = c.req.param('name');
+    const serverConfig = c.get('serverConfig');
+
+    // 一次读回该插件的所有配置，避免逐项往返。
+    // 必须用 getByPrefix —— `get(key)` 是精确匹配，
+    // 传 "album." 只会去查一个名字真叫 "album." 的键。
+    // 声明为可选，缺失时降级为空对象而不是抛错。
+    const rows = (await serverConfig.getByPrefix?.(`${name}.`)) ?? [];
+    const prefix = `${name}.`;
+
+    const values: Record<string, string> = {};
+    for (const [key, value] of rows) {
+      if (typeof key === 'string' && key.startsWith(prefix) && value !== undefined) {
+        values[key.slice(prefix.length)] = String(value);
+      }
+    }
+
+    return c.json({ success: true, data: { name, values } });
+  }));
+
+  /**
+   * PUT /api/admin/plugins/:name/settings
+   *
+   * 批量写入设置。body: `{ values: Record<string, unknown> }`
+   *
+   * 只接受字符串、数字、布尔与字符串数组 —— 配置存的是文本，
+   * 复杂结构由插件自己序列化。这样避免往 config 里塞不可控结构。
+   */
+  app.put('/:name/settings', adminJson(async (c: AppContext) => {
+    const name = c.req.param('name');
+    const body = await c.req.json().catch(() => null) as { values?: unknown } | null;
+
+    if (!body || typeof body.values !== 'object' || body.values === null) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: FEED_ERROR_CODES.FEED_VALIDATION_FAILED,
+            message: 'Body must be { values: object }',
+          },
+        },
+        400,
+      );
+    }
+
+    const entries = Object.entries(body.values as Record<string, unknown>);
+    const rejected = entries.filter(([, value]) => !isStorableValue(value));
+    if (rejected.length > 0) {
+      return c.json(
+        {
+          success: false,
+          error: {
+            code: FEED_ERROR_CODES.FEED_VALIDATION_FAILED,
+            message: `Unsupported value type for keys: ${rejected.map(([k]) => k).join(', ')}`,
+          },
+        },
+        400,
+      );
+    }
+
+    const serverConfig = c.get('serverConfig');
+    const saved: Record<string, string> = {};
+
+    for (const [key, value] of entries) {
+      // 配置键必须是 `{插件名}.{键}`，键名本身不含点号
+      if (key.includes('.') || key.length === 0) {
+        return c.json(
+          {
+            success: false,
+            error: {
+              code: FEED_ERROR_CODES.FEED_VALIDATION_FAILED,
+              message: `Invalid setting key: ${key}`,
+            },
+          },
+          400,
+        );
+      }
+
+      const fullKey = `${name}.${key}`;
+      const serialized =
+        Array.isArray(value) ? value.join(',') : String(value as string | number | boolean);
+      saved[key] = serialized;
+      await serverConfig.set(fullKey, serialized, true);
+    }
+
+    console.log(
+      `[plugins] settings updated for ${name}: ${Object.keys(saved).join(', ') || '(empty)'}`,
+    );
+
+    return c.json({ success: true, data: { name, values: saved } });
+  }));
+
   return app;
+}
+
+/**
+ * 能否存进配置。
+ *
+ * 配置最终是文本，数组会被序列化成逗号分隔的字符串。
+ * 拒绝对象/数组嵌套/函数等不可控结构，避免插件往 config 里塞脏数据。
+ */
+function isStorableValue(value: unknown): boolean {
+  if (value === null || value === undefined) return true;
+  if (Array.isArray(value)) {
+    // 数组的元素必须都是标量 —— 字符串数组才能安全序列化
+    return value.every((item) => isStorableValue(item) && !Array.isArray(item));
+  }
+  const type = typeof value;
+  return type === 'string' || type === 'number' || type === 'boolean';
 }
 
 /** 解析启用列表。与 registry 内部逻辑保持一致 */

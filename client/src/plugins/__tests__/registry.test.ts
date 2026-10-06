@@ -3,8 +3,10 @@ import { describe, it, expect, beforeEach } from "bun:test";
 import {
   PLUGIN_PATH_PREFIX,
   findPluginPage,
+  findPluginSettings,
   listFrontendPlugins,
   listPluginPages,
+  listPluginSlots,
   registerFrontendPlugin,
   resetFrontendPlugins,
 } from "../registry";
@@ -122,5 +124,82 @@ describe('前端插件注册表', () => {
 
       expect(() => registerFrontendPlugin(makePlugin('same'))).not.toThrow();
     });
+  });
+});
+
+describe('插槽与设置项', () => {
+  function Stub() {
+    return null;
+  }
+
+  beforeEach(() => {
+    resetFrontendPlugins();
+  });
+
+  it('should return only slots matching the requested position', () => {
+    registerFrontendPlugin({
+      manifest: { name: 'a', displayName: 'A', version: '1.0.0' },
+      pages: [],
+      slots: [
+        { Component: Stub, slot: 'below-header' },
+        { Component: Stub, slot: 'above-footer' },
+      ],
+    });
+
+    expect(listPluginSlots('below-header', '/')).toHaveLength(1);
+    expect(listPluginSlots('above-footer', '/')).toHaveLength(1);
+    expect(listPluginSlots('sidebar', '/')).toHaveLength(0);
+  });
+
+  it('should filter slots by onlyPaths', () => {
+    registerFrontendPlugin({
+      manifest: { name: 'album', displayName: 'Album', version: '1.0.0' },
+      pages: [],
+      slots: [{ Component: Stub, slot: 'below-header', onlyPaths: ['/'] }],
+    });
+
+    expect(listPluginSlots('below-header', '/')).toHaveLength(1);
+    // 非首页不显示 —— 这正是相册「只在首页」的声明
+    expect(listPluginSlots('below-header', '/about')).toHaveLength(0);
+  });
+
+  it('should show a slot on all paths when onlyPaths is omitted', () => {
+    registerFrontendPlugin({
+      manifest: { name: 'banner', displayName: 'B', version: '1.0.0' },
+      pages: [],
+      slots: [{ Component: Stub, slot: 'below-header' }],
+    });
+
+    expect(listPluginSlots('below-header', '/')).toHaveLength(1);
+    expect(listPluginSlots('below-header', '/about')).toHaveLength(1);
+  });
+
+  it('should return empty when no plugin declares the slot', () => {
+    expect(listPluginSlots('below-header', '/')).toHaveLength(0);
+  });
+
+  it('should expose declared settings for a plugin', () => {
+    registerFrontendPlugin({
+      manifest: { name: 'album', displayName: 'Album', version: '1.0.0' },
+      pages: [],
+      settings: [
+        { key: 'images', label: '图片', field: { type: 'imageList' } },
+        { key: 'interval', label: '间隔', field: { type: 'number' } },
+      ],
+    });
+
+    const settings = findPluginSettings('album');
+    expect(settings).toHaveLength(2);
+    expect(settings[0].key).toBe('images');
+  });
+
+  it('should return an empty list for plugins without settings', () => {
+    registerFrontendPlugin({
+      manifest: { name: 'bare', displayName: 'B', version: '1.0.0' },
+      pages: [],
+    });
+
+    expect(findPluginSettings('bare')).toEqual([]);
+    expect(findPluginSettings('nonexistent')).toEqual([]);
   });
 });

@@ -22,6 +22,14 @@ export interface CacheImpl {
     deletePrefix(prefix: string): Promise<void>;
     getOrSet<T>(key: string, factory: () => Promise<T>): Promise<T>;
     getOrDefault<T>(key: string, defaultValue: T): Promise<T>;
+    /**
+     * 按前缀查所有键值对。用于「读某个命名空间下的全部配置」。
+     * 注意 `get(key)` 是**精确匹配**，查不到 `album.*` 这类前缀。
+     *
+     * 声明为可选是因为测试替身不一定实现它 ——
+     * 用到它的代码要能优雅降级（返回空数组）。
+     */
+    getByPrefix?(prefix: string): Promise<Array<[string, any]>>;
     getBySuffix(suffix: string): Promise<any[]>;
     all(): Promise<Map<string, any>>;
     save(): Promise<void>;

@@ -912,6 +912,19 @@
     "about_desc": "插件是编译期内置的，修改后需要重新构建部署",
     "about_docs": "完整文档见",
     "about_server": "服务端注册入口：",
-    "about_client": "前端注册入口："
+    "about_client": "前端注册入口：",
+    "settings": {
+      "action": "设置",
+      "title": "插件设置",
+      "description": "配置该插件的行为",
+      "missing_name": "未指定插件",
+      "not_found_title": "找不到该插件的前端声明",
+      "not_found_desc": "插件「{{name}}」没有注册前端设置项。纯服务端插件不需要设置页。",
+      "back": "返回插件列表",
+      "none_title": "该插件没有可配置项",
+      "none_desc": "它不需要在后台配置。",
+      "load_failed": "读取设置失败，请刷新重试",
+      "saved": "已保存"
+    }
   }
 }

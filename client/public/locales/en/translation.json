@@ -912,6 +912,19 @@
     "about_desc": "Plugins are compiled in, so changes require a rebuild and redeploy",
     "about_docs": "Full docs:",
     "about_server": "Server entry:",
-    "about_client": "Client entry:"
+    "about_client": "Client entry:",
+    "settings": {
+      "action": "Settings",
+      "title": "Plugin settings",
+      "description": "Configure how this plugin behaves",
+      "missing_name": "No plugin specified",
+      "not_found_title": "Frontend declaration not found",
+      "not_found_desc": "Plugin \"{{name}}\" declares no settings. Server-only plugins don't need a settings page.",
+      "back": "Back to plugins",
+      "none_title": "This plugin has nothing to configure",
+      "none_desc": "It requires no configuration.",
+      "load_failed": "Failed to load settings, please refresh",
+      "saved": "Saved"
+    }
   }
 }

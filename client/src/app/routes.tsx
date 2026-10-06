@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useContext } from "react";
 import type { DefaultParams, PathPattern } from "wouter";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import { AdminLayout } from "../components/admin-layout";
 import Footer from "../components/footer";
 import { Header } from "../components/header";
@@ -12,6 +12,7 @@ import useTableOfContents from "../hooks/useTableOfContents";
 import { useSiteConfig } from "../hooks/useSiteConfig";
 import { CallbackPage } from "../page/callback";
 import { CompatTasksPage } from "../page/compat-tasks";
+import { AdminPluginSettingsPage } from "../page/admin-plugin-settings";
 import { AdminPluginsPage } from "../page/admin-plugins";
 import { AdminUsersPage } from "../page/admin-users";
 import { CommentModerationPage } from "../page/comment-moderation";
@@ -91,6 +92,10 @@ export function AppRoutes() {
 
       <AdminRoute path="/admin/plugins" requirePermission title={t("plugins.title")} description={t("plugins.description")}>
         <AdminPluginsPage />
+      </AdminRoute>
+
+      <AdminRoute path="/admin/plugins/:name/settings" requirePermission title={t("plugins.settings.title")} description={t("plugins.settings.description")}>
+        <AdminPluginSettingsPage />
       </AdminRoute>
 
       <AdminRoute path="/admin/queue-status" requirePermission title={t("queue_status.title")} description={t("admin.queue_status_description")}>
@@ -193,12 +198,16 @@ function AppRoute({
       {(params) => {
         const resolvedContent = typeof content === "function" ? content(params) : content;
         const layoutDefinition = getHeaderLayoutDefinition(siteConfig.headerLayout);
+        // 插件插槽要按当前路径过滤（例如「相册只在首页显示」），
+        // 所以把真实路径传下去，而不是用 Route 的 path prop —— 那可能是通配符。
+        const [location] = useLocation();
 
         return layoutDefinition.renderRouteShell({
           header: <Header>{headerComponent}</Header>,
           content: <Padding className={paddingClassName}>{resolvedContent}</Padding>,
           footer: <Footer />,
           paddingClassName,
+          path: location,
         });
       }}
     </Route>

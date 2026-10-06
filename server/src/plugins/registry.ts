@@ -153,6 +153,18 @@ export class PluginRegistry {
   }
 
   /**
+   * 找出插件声明为「可公开」的配置键。
+   *
+   * 用于 `/api/plugins/:name/config`：前端组件要读自己的设置，
+   * 但 serverConfig 里混着敏感值，不能整体下发。
+   * 只有插件自己在 manifest 里声明过的键才会被返回。
+   */
+  publicSettingsOf(name: string): string[] {
+    const entry = this.plugins.find((p) => p.manifest.name === name);
+    return entry?.publicSettings ?? [];
+  }
+
+  /**
    * 注册一个插件。
    *
    * 会先做基本校验：manifest.name 必须合法且不重复。
@@ -169,6 +181,8 @@ export class PluginRegistry {
     this.plugins.push({
       manifest: plugin.manifest,
       hooks: stripManifest(plugin),
+      // publicSettings 属于清单的一部分，不进 hooks
+      publicSettings: plugin.publicSettings ?? [],
       status: 'enabled',
     });
   }

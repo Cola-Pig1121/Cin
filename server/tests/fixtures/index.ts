@@ -306,6 +306,22 @@ export class TestCacheImpl implements CacheImpl {
         return [];
     }
 
+    /**
+     * 按前缀查键值对。
+     *
+     * 真实实现是 SQL `LIKE 'prefix%'`，这里遍历内存 store 得到等价结果 ——
+     * 之前这个方法没实现，导致「读插件设置」这类用前缀查询的逻辑
+     * 在测试里静默降级成空结果（getBySuffix 也有同样的问题）。
+     */
+    async getByPrefix(prefix: string): Promise<Array<[string, any]>> {
+        if (!(await this.isEnabled())) {
+            return [];
+        }
+        return [...this.data.entries()]
+            .filter(([key]) => key.startsWith(prefix))
+            .map(([key, value]) => [key, value]);
+    }
+
     async all(): Promise<Map<string, any>> {
         if (!(await this.isEnabled())) {
             return new Map<string, any>();

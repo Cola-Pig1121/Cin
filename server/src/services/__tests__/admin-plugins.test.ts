@@ -223,6 +223,96 @@ describe('插件启停', () => {
     });
   });
 
+  // ===== 插件设置 =====
+
+  describe('插件设置读写', () => {
+    it('should reject anonymous and non-admin callers', async () => {
+      const anon = await app.request('/any/settings', { method: 'GET' }, env);
+      expect(anon.status).toBe(401);
+
+      const anonPut = await app.request('/any/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: { a: '1' } }),
+      }, env);
+      expect(anonPut.status).toBe(401);
+
+      const user = await app.request('/any/settings', {
+        method: 'GET',
+        headers: asUser,
+      }, env);
+      expect(user.status).toBe(403);
+    });
+
+    it('should reject a malformed values payload', async () => {
+      for (const body of ['{}', '{"values":null}', '{"values":123}', 'not json']) {
+        const res = await app.request('/p/settings', {
+          method: 'PUT',
+          headers: { ...asAdmin, 'Content-Type': 'application/json' },
+          body,
+        }, env);
+        expect(res.status).toBe(400);
+      }
+    });
+
+    it('should save and read back settings', async () => {
+      const put = await app.request('/album/settings', {
+        method: 'PUT',
+        headers: { ...asAdmin, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          values: { images: 'a.jpg,b.jpg', interval: '5000', enabled: 'true' },
+        }),
+      }, env);
+
+      expect(put.status).toBe(200);
+      const putBody = await put.json() as any;
+      expect(putBody.success).toBe(true);
+
+      // 值必须落到 serverConfig
+      expect(await serverConfig.get('album.images')).toBe('a.jpg,b.jpg');
+      expect(await serverConfig.get('album.interval')).toBe('5000');
+
+      const get = await app.request('/album/settings', {
+        method: 'GET',
+        headers: asAdmin,
+      }, env);
+      const getBody = await get.json() as any;
+      expect(getBody.data.values.images).toBe('a.jpg,b.jpg');
+    });
+
+    it('should serialize arrays as comma-separated strings', async () => {
+      await app.request('/album/settings', {
+        method: 'PUT',
+        headers: { ...asAdmin, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: { images: ['a.jpg', 'b.jpg'] } }),
+      }, env);
+
+      expect(await serverConfig.get('album.images')).toBe('a.jpg,b.jpg');
+    });
+
+    it('should reject unserializable values', async () => {
+      // 嵌套对象塞进 config 会变成不可控结构
+      const res = await app.request('/album/settings', {
+        method: 'PUT',
+        headers: { ...asAdmin, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: { bad: { nested: true } } }),
+      }, env);
+
+      expect(res.status).toBe(400);
+    });
+
+    it('should reject a setting key containing a dot', async () => {
+      // 键里有点号会与 {插件名}.{键} 的命名空间冲突
+      const res = await app.request('/album/settings', {
+        method: 'PUT',
+        headers: { ...asAdmin, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ values: { 'a.b': 'x' } }),
+      }, env);
+
+      expect(res.status).toBe(400);
+    });
+  });
+
   // ===== 启用状态如何影响钩子派发 =====
 
   describe('启用状态与钩子派发', () => {

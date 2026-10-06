@@ -13,9 +13,11 @@
 import { registerFrontendPlugin } from './registry';
 
 import helloPlugin from '../../plugins/hello';
+import photoAlbum from '../../plugins/photo-album';
 
 export function registerFrontendPlugins(): void {
   registerFrontendPlugin(helloPlugin);
+  registerFrontendPlugin(photoAlbum);
 }
 
 // 模块加载时自动注册：路由表在 import 本文件后就会读到已注册的页面。

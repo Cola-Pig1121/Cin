@@ -299,6 +299,11 @@ export interface AdminPluginListResponse {
   plugins: AdminPluginItem[];
 }
 
+export interface PluginSettingsResponse {
+  name: string;
+  values: Record<string, string>;
+}
+
 export interface AdminPluginToggleResponse {
   success: boolean;
   data: {
@@ -526,6 +531,7 @@ export const API_PATHS = {
   // 插件管理
   ADMIN_PLUGINS: '/api/admin/plugins',
   ADMIN_PLUGIN_TOGGLE: (name: string) => `/api/admin/plugins/${name}`,
+  ADMIN_PLUGIN_SETTINGS: (name: string) => `/api/admin/plugins/${name}/settings`,
 
   // Friend
   FRIEND_LIST: '/api/friend',

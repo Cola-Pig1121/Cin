@@ -14,6 +14,7 @@ import type { RinPlugin } from './types';
 import { pluginRegistry } from './registry';
 
 import commentGuard from '../../plugins/comment-guard';
+import photoAlbum from '../../plugins/photo-album';
 
 /**
  * 全部内置插件。
@@ -23,6 +24,7 @@ import commentGuard from '../../plugins/comment-guard';
  */
 const ALL_PLUGINS: RinPlugin[] = [
   commentGuard,
+  photoAlbum,
 ];
 
 /**

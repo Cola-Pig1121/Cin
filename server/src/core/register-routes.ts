@@ -1,5 +1,6 @@
 import type { RinApp } from "./app-types";
 import { AdminPluginService } from "../services/admin-plugins";
+import { PluginConfigService } from "../services/plugin-config";
 import { AdminUserService } from "../services/admin-users";
 import { PasswordAuthService } from "../services/auth";
 import { CommentService } from "../services/comments";
@@ -33,6 +34,8 @@ export function registerRoutes(app: RinApp) {
   app.route("/moments", MomentsService());
   app.route("/user", UserService());
   // 管理员后台：用户列表 / 改权限 / 删除。每个端点内部独立校验 admin 标记。
+  // 插件公开配置：前端插件组件读自己的设置用，无需鉴权（只返回插件声明过的公开键）
+  app.route("/plugins", PluginConfigService());
   app.route("/admin/plugins", AdminPluginService());
   app.route("/admin", AdminUserService());
   app.route("/auth", PasswordAuthService());

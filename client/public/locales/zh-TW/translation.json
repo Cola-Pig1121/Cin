@@ -912,6 +912,19 @@
     "about_desc": "外掛是編譯期內置的，修改後需要重新建置部署",
     "about_docs": "完整文件見",
     "about_server": "伺服器端註冊入口：",
-    "about_client": "前端註冊入口："
+    "about_client": "前端註冊入口：",
+    "settings": {
+      "action": "設定",
+      "title": "外掛設定",
+      "description": "設定該外掛的行為",
+      "missing_name": "未指定外掛",
+      "not_found_title": "找不到該外掛的前端宣告",
+      "not_found_desc": "外掛「{{name}}」沒有註冊前端設定項。純伺服器端外掛不需要設定頁。",
+      "back": "返回外掛列表",
+      "none_title": "該外掛沒有可設定項",
+      "none_desc": "它不需要在後台設定。",
+      "load_failed": "讀取設定失敗，請重新整理重試",
+      "saved": "已儲存"
+    }
   }
 }

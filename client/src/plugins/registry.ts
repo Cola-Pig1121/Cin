@@ -60,10 +60,83 @@ export interface PluginPage {
   icon?: string;
 }
 
+/**
+ * 页面插槽 —— 决定插件内容插在页面的哪个位置。
+ *
+ * 用插槽而不是硬编码「插在导航栏下面」，是因为不同插件需求不同：
+ * 轮播图要放顶部横幅，侧栏公告要放右侧。
+ * 插件作者自己选，不合适的布局就不声明 slot。
+ */
+export type PluginSlot =
+  /** 页头导航栏与内容之间（轮播图、横幅） */
+  | 'below-header'
+  /** 页面底部之前（推荐位、版权声明） */
+  | 'above-footer'
+  /** 文章详情页侧栏 */
+  | 'sidebar';
+
+export interface PluginPageSlot {
+  /** 要挂载的组件 */
+  Component: ComponentType;
+  /** 挂在哪个位置 */
+  slot: PluginSlot;
+  /**
+   * 限定只在某些路径出现。`'/'` = 只在首页。不填 = 所有页面。
+   *
+   * 路径匹配只在一个地方实现，插件作者不必重复造轮子。
+   */
+  onlyPaths?: string[];
+}
+
+/**
+ * 插件设置项的字段类型。
+ *
+ * 插件声明字段，通用设置页据此渲染表单 —— 用户只填值，不写代码。
+ */
+export type PluginSettingField =
+  | { type: 'text'; placeholder?: string }
+  | { type: 'textarea'; rows?: number }
+  | { type: 'number'; min?: number; max?: number; step?: number }
+  | { type: 'boolean' }
+  | { type: 'select'; options: { value: string; label: string }[] }
+  /** 逗号分隔的字符串列表 */
+  | { type: 'stringList'; itemPlaceholder?: string }
+  /**
+   * 图片列表：每一项可上传或填网址。
+   * 上传复用项目现有的 `/api/storage`，图片落在自己的存储里。
+   */
+  | { type: 'imageList'; maxItems?: number };
+
+/** 单个设置项 */
+export interface PluginSetting {
+  /** 配置键。不含插件名前缀，内部自动拼成 `{插件名}.{key}` */
+  key: string;
+  /** 设置项名称 */
+  label: string;
+  /** 一句话说明作用 */
+  description?: string;
+  /** 字段类型，通用设置页据此渲染表单 */
+  field: PluginSettingField;
+  /** 默认值。imageList 用数组，stringList 用字符串 */
+  defaultValue?: string | number | boolean | string[];
+}
+
 export interface FrontendPlugin {
   manifest: FrontendPluginManifest;
-  /** 该插件提供的页面 */
+  /** 该插件提供的独立页面 */
   pages: PluginPage[];
+  /**
+   * 挂到页面插槽上的组件。
+   * 与 `pages` 分开：插槽是「出现在既有页面里」，pages 是「独立路由」。
+   */
+  slots?: PluginPageSlot[];
+  /**
+   * 需要在后台暴露的设置项。
+   *
+   * 用户在 `/admin/plugins/<name>/settings` 填这些字段，
+   * 值存到 serverConfig 的 `{插件名}.{key}`，插件自行读取。
+   */
+  settings?: PluginSetting[];
 }
 
 /** 页面前缀。插件页面只能用这个前缀 */
@@ -131,6 +204,37 @@ export function listPluginPages(): PluginPage[] {
 /** 按路径找页面 */
 export function findPluginPage(path: string): PluginPage | undefined {
   return listPluginPages().find((page) => page.path === path);
+}
+
+/**
+ * 找出挂在指定插槽、且适用于当前路径的组件。
+ *
+ * @param slot  插槽位置
+ * @param path  当前路径，用于过滤 `onlyPaths`
+ */
+export function listPluginSlots(
+  slot: PluginSlot,
+  path: string,
+): PluginPageSlot[] {
+  const matched: PluginPageSlot[] = [];
+
+  for (const plugin of registry) {
+    for (const item of plugin.slots ?? []) {
+      if (item.slot !== slot) continue;
+      // onlyPaths 为空表示不限路径
+      if (item.onlyPaths && item.onlyPaths.length > 0) {
+        if (!item.onlyPaths.includes(path)) continue;
+      }
+      matched.push(item);
+    }
+  }
+
+  return matched;
+}
+
+/** 找出某个插件的设置项声明 */
+export function findPluginSettings(name: string): PluginSetting[] {
+  return registry.find((p) => p.manifest.name === name)?.settings ?? [];
 }
 
 /** 清空注册表。测试用 */

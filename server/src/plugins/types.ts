@@ -202,6 +202,17 @@ export interface PluginHooks {
  */
 export interface RinPlugin extends PluginHooks {
   manifest: PluginManifest;
+  /**
+   * 可公开读取的配置键（不含插件名前缀）。
+   *
+   * 前端的插件组件要读自己的设置，但 serverConfig 里混着 SMTP 密码、
+   * AI API Key 等敏感值，**不能整体下发**。所以由插件显式声明哪些键
+   * 是公开数据（如轮播图的 URL 列表），只有这些会被 `/api/plugins/:name/config` 返回。
+   *
+   * 留空 = 不对外公开任何配置。此时插件若要在前端展示配置，
+   * 得自己提供 API，或把设置放在 clientConfig 里。
+   */
+  publicSettings?: string[];
 }
 
 /**
@@ -214,6 +225,8 @@ export interface RinPlugin extends PluginHooks {
 export interface RegisteredPlugin {
   manifest: PluginManifest;
   hooks: PluginHooks;
+  /** 声明为可公开的配置键。供前端的插件组件读取自身设置 */
+  publicSettings: string[];
   status: 'enabled' | 'disabled' | 'error';
   /** 加载或 setup 失败的原因。status 为 'error' 时非空 */
   error?: string;
