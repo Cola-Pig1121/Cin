@@ -126,9 +126,13 @@ export function AppRoutes() {
       </AppRoute>
 
       {/* 插件页面：必须注册在 `/:alias` 通配路由之前，
-          否则插件的路径会被当成文章别名去解析 */}
+          否则插件的路径会被当成文章别名去解析。
+
+          PluginRoute 必须自己带上 `path` prop —— wouter 的 Switch 直接读
+          子元素的 props.path 来匹配；path 为 undefined 时它会退化成通配符 `*`，
+          从而匹配所有路径并中断后续所有路由的匹配（表现为页面全白）。 */}
       {listPluginPages().map((page) => (
-        <PluginRoute key={page.path} page={page} />
+        <PluginRoute key={page.path} path={page.path} page={page} />
       ))}
 
       <TocRoute path="/feed/:id">
@@ -201,7 +205,7 @@ function AppRoute({
   );
 }
 
-function PluginRoute({ page }: { page: PluginPage }) {
+function PluginRoute({ path, page }: { path: string; page: PluginPage }) {
   const { t } = useTranslation();
   const profile = useContext(ProfileContext);
 
@@ -209,8 +213,11 @@ function PluginRoute({ page }: { page: PluginPage }) {
   // 服务端接口必须各自鉴权，这里只是避免让无权用户看到不该看的界面
   const denied = page.requireAdmin && !profile?.permission;
 
+  // `path` 必须透传给 AppRoute：它是 wouter 用来匹配路由的依据。
+  // 之前只在 PluginRoute 上写 `path` prop、内部又用 page.path，
+  // 结果外层 Switch 读到的是 undefined，把所有路径都匹配掉了。
   return (
-    <AppRoute path={page.path}>
+    <AppRoute path={path}>
       {denied ? (
         <ErrorPage error={t("error.permission_denied")} />
       ) : (
