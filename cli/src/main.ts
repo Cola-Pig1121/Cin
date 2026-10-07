@@ -2,6 +2,7 @@ import { logger } from "./lib/logger";
 import { runDbCommand } from "./commands/db";
 import { runDeployCommand } from "./commands/deploy";
 import { runPublishCommand } from "./commands/publish";
+import { runConfigCommand } from "./commands/config";
 import { runDevCommand } from "./commands/dev";
 import { runReleaseCommand } from "./commands/release";
 import { runSetupDev } from "./tasks/setup-dev";
@@ -14,6 +15,7 @@ Commands:
   dev
   deploy
   publish <payload.json> [--real] [--id <id>]
+  config
   db migrate
   db fix-top-field
   setup-dev
@@ -26,7 +28,7 @@ Commands:
  * 这些命令有自己的详细 help（参数多，总览里放不下）。
  * 调用 `<cmd> --help` 时转交给它们，而不是打印总览。
  */
-const COMMANDS_WITH_OWN_HELP = new Set(["publish"]);
+const COMMANDS_WITH_OWN_HELP = new Set(["publish", "config"]);
 
 export async function runCli(rawArgs: string[]) {
   const args = [...rawArgs];
@@ -40,6 +42,9 @@ export async function runCli(rawArgs: string[]) {
       switch (command) {
         case "publish":
           await runPublishCommand(cmdArgs);
+          return;
+        case "config":
+          await runConfigCommand(cmdArgs);
           return;
         default:
           break;
@@ -64,6 +69,9 @@ export async function runCli(rawArgs: string[]) {
       return;
     case "publish":
       await runPublishCommand(cmdArgs);
+      return;
+    case "config":
+      await runConfigCommand(cmdArgs);
       return;
     case "db":
       await runDbCommand(cmdArgs);
