@@ -2,6 +2,9 @@
 -- numeric mode stays available. Existing posts are remapped to uuids, except the
 -- `about` page which keeps its numeric id so bookmarks keep working.
 --
+-- Prerequisite: migrations 0000-0013 applied (the column list below matches that
+-- schema exactly; databases with extra custom columns would lose those columns).
+--
 -- SQLite cannot ALTER a PRIMARY KEY type, so the feeds table and every child
 -- table referencing it (visits, visit_stats, comments, feed_hashtags) are rebuilt.
 -- A mapping table carries old -> new ids across the rebuild.
@@ -160,4 +163,6 @@ CREATE INDEX `feeds_visibility_order_idx` ON `feeds` (`draft`, `listed`, `top`, 
 CREATE INDEX `feeds_uid_idx` ON `feeds` (`uid`);
 --> statement-breakpoint
 
-UPDATE `info` SET `value` = '14' WHERE `key` = 'migration_version';
+-- upsert：个别库可能没有 migration_version 行，缺行时插入而不是漏更
+INSERT INTO `info` (`key`, `value`) VALUES ('migration_version', '14')
+ON CONFLICT(`key`) DO UPDATE SET `value` = '14';
