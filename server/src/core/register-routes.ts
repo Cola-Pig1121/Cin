@@ -2,6 +2,7 @@ import type { RinApp } from "./app-types";
 import { AdminPluginService } from "../services/admin-plugins";
 import { PluginConfigService } from "../services/plugin-config";
 import { AdminUserService } from "../services/admin-users";
+import { AdminFeedsService } from "../services/admin-feeds";
 import { PasswordAuthService } from "../services/auth";
 import { CommentService } from "../services/comments";
 import { ConfigService } from "../services/config";
@@ -38,6 +39,8 @@ export function registerRoutes(app: RinApp) {
   app.route("/plugins", PluginConfigService());
   app.route("/admin/plugins", AdminPluginService());
   app.route("/admin", AdminUserService());
+  // 管理员后台：全站文章统一管理（含草稿/未列出）与批量删除，端点内部独立校验 admin
+  app.route("/admin", AdminFeedsService());
   app.route("/auth", PasswordAuthService());
   // 注册与登录共用 /auth 前缀：/auth/register/request、/auth/register/verify
   app.route("/auth", RegistrationService());

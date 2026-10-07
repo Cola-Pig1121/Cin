@@ -934,5 +934,54 @@
   },
   "turnstile": {
     "load_failed": "人机验证组件加载失败，请检查网络后刷新页面重试。"
+  },
+  "admin_articles": {
+    "title": "文章管理",
+    "description": "查看全站文章（含草稿与未列出），检查信息并批量删除。",
+    "total": "共 {{total}} 篇",
+    "untitled": "无标题",
+    "no_summary": "暂无摘要",
+    "top": "置顶",
+    "selected": "已选 {{count}} 篇",
+    "select": {
+      "all": "全选",
+      "none": "取消全选",
+      "row": "选择文章 {{title}}"
+    },
+    "status": {
+      "published": "已发布",
+      "draft": "草稿",
+      "unlisted": "未列出"
+    },
+    "fields": {
+      "id": "ID：",
+      "alias": "别名：",
+      "created_at": "创建时间：",
+      "updated_at": "更新时间：",
+      "comments": "评论数：",
+      "pv": "浏览量："
+    },
+    "action": {
+      "view": "查看",
+      "collapse": "收起"
+    },
+    "search": {
+      "placeholder": "按标题或别名搜索",
+      "action": "搜索",
+      "clear": "清除"
+    },
+    "pagination": {
+      "prev": "上一页",
+      "next": "下一页",
+      "status": "第 {{page}} / {{totalPages}} 页"
+    },
+    "batch_delete": {
+      "action": "批量删除",
+      "title": "批量删除文章",
+      "confirm": "确定永久删除选中的 {{count}} 篇文章吗？其评论、标签与浏览统计也会一并删除。",
+      "missing": "已删除 {{count}} 篇。以下 id 未找到：{{ids}}"
+    },
+    "empty": "还没有任何文章",
+    "empty_filtered": "没有匹配关键词的文章"
   }
 }

@@ -89,7 +89,8 @@ export interface ConfigHealthResponse {
 }
 
 export interface QueueStatusItem {
-  id: number;
+  /** 所属文章 ID（字符串） */
+  id: string;
   title: string | null;
   aiSummaryStatus: "idle" | "pending" | "processing" | "completed" | "failed";
   aiSummaryError: string;
@@ -128,7 +129,8 @@ export interface CompatAISummaryActionResponse {
 }
 
 export interface CompatBlurhashCandidate {
-  id: number;
+  /** 文章 ID（字符串） */
+  id: string;
   title: string | null;
   content: string;
 }
@@ -140,6 +142,39 @@ export interface CompatBlurhashCandidatesResponse {
 
 export interface CompatBlurhashApplyResponse {
   updated: boolean;
+}
+
+/**
+ * 管理端「文章统一管理」类型。
+ * packages/api 尚未收录这组契约，先在客户端本地声明；服务端见 server/src/services/admin-feeds.ts
+ */
+export interface AdminArticleItem {
+  id: string;
+  title: string | null;
+  alias: string | null;
+  summary: string;
+  draft: number;
+  listed: number;
+  top: number;
+  createdAt: string;
+  updatedAt: string;
+  commentCount: number;
+  pv: number;
+}
+
+export interface AdminArticleListResponse {
+  feeds: AdminArticleItem[];
+  pagination: {
+    page: number;
+    size: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface AdminArticleBatchDeleteResponse {
+  deleted: number;
+  missing: string[];
 }
 
 // Re-export for external use
@@ -325,17 +360,17 @@ class FeedAPI {
   }
 
   // POST /api/feed
-  async create(body: CreateFeedRequest): Promise<ApiResponse<{ insertedId: number }>> {
-    return this.http.post<{ insertedId: number }>("/api/feed", body);
+  async create(body: CreateFeedRequest): Promise<ApiResponse<{ insertedId: string }>> {
+    return this.http.post<{ insertedId: string }>("/api/feed", body);
   }
 
   // POST /api/feed/:id
-  async update(id: number, body: UpdateFeedRequest): Promise<ApiResponse<void>> {
+  async update(id: string, body: UpdateFeedRequest): Promise<ApiResponse<void>> {
     return this.http.post<void>(`/api/feed/${id}`, body);
   }
 
   // DELETE /api/feed/:id
-  async delete(id: number): Promise<ApiResponse<void>> {
+  async delete(id: string): Promise<ApiResponse<void>> {
     return this.http.delete<void>(`/api/feed/${id}`);
   }
 
@@ -345,7 +380,7 @@ class FeedAPI {
   }
 
   // POST /api/feed/top/:id
-  async setTop(id: number, top: number): Promise<ApiResponse<void>> {
+  async setTop(id: string, top: number): Promise<ApiResponse<void>> {
     return this.http.post<void>(`/api/feed/top/${id}`, { top });
   }
 }
@@ -374,12 +409,12 @@ class CommentAPI {
   constructor(private http: HttpClient) {}
 
   // GET /api/comment/:feed
-  async list(feedId: number): Promise<ApiResponse<Comment[]>> {
+  async list(feedId: string): Promise<ApiResponse<Comment[]>> {
     return this.http.get<Comment[]>(API_PATHS.COMMENT_LIST(feedId));
   }
 
   // POST /api/comment/:feed
-  async create(feedId: number, body: CreateCommentRequest): Promise<ApiResponse<CreateCommentResponse>> {
+  async create(feedId: string, body: CreateCommentRequest): Promise<ApiResponse<CreateCommentResponse>> {
     return this.http.post<CreateCommentResponse>(API_PATHS.COMMENT_CREATE(feedId), body);
   }
 
@@ -526,6 +561,33 @@ class AdminPluginAPI {
 }
 
 /**
+ * 管理员后台 API（文章统一管理：含草稿/未列出）
+ */
+class AdminFeedsAPI {
+  constructor(private http: HttpClient) {}
+
+  // GET /api/admin/feeds?page=1&size=20&keyword=xxx
+  async list(
+    params: { page?: number; size?: number; keyword?: string } = {},
+  ): Promise<ApiResponse<AdminArticleListResponse>> {
+    const query = new URLSearchParams();
+    if (params.page) query.set('page', String(params.page));
+    if (params.size) query.set('size', String(params.size));
+    if (params.keyword) query.set('keyword', params.keyword);
+
+    const suffix = query.toString();
+    return this.http.get<AdminArticleListResponse>(
+      suffix ? `/api/admin/feeds?${suffix}` : '/api/admin/feeds',
+    );
+  }
+
+  // POST /api/admin/feeds/batch-delete — body: { ids: string[] }
+  async batchDelete(ids: string[]): Promise<ApiResponse<AdminArticleBatchDeleteResponse>> {
+    return this.http.post<AdminArticleBatchDeleteResponse>('/api/admin/feeds/batch-delete', { ids });
+  }
+}
+
+/**
  * Friend API methods
  */
 class FriendAPI {
@@ -637,15 +699,15 @@ class ConfigAPI {
     return this.http.get<CompatBlurhashCandidatesResponse>("/api/config/compat-tasks/blurhash");
   }
 
-  async applyCompatBlurhash(feedId: number, content: string): Promise<ApiResponse<CompatBlurhashApplyResponse>> {
+  async applyCompatBlurhash(feedId: string, content: string): Promise<ApiResponse<CompatBlurhashApplyResponse>> {
     return this.http.post<CompatBlurhashApplyResponse>(`/api/config/compat-tasks/blurhash/${feedId}`, { content });
   }
 
-  async retryQueueTask(feedId: number): Promise<ApiResponse<QueueTaskActionResponse>> {
+  async retryQueueTask(feedId: string): Promise<ApiResponse<QueueTaskActionResponse>> {
     return this.http.post<QueueTaskActionResponse>(`/api/config/queue-status/${feedId}/retry`);
   }
 
-  async deleteQueueTask(feedId: number): Promise<ApiResponse<QueueTaskActionResponse>> {
+  async deleteQueueTask(feedId: string): Promise<ApiResponse<QueueTaskActionResponse>> {
     return this.http.delete<QueueTaskActionResponse>(`/api/config/queue-status/${feedId}`);
   }
 
@@ -814,6 +876,7 @@ export class ApiClient {
   rss: RSSAPI;
   adminUser: AdminUserAPI;
   adminPlugin: AdminPluginAPI;
+  adminFeeds: AdminFeedsAPI;
 
   constructor(baseUrl: string) {
     this.http = new HttpClient(baseUrl);
@@ -823,6 +886,7 @@ export class ApiClient {
     this.user = new UserAPI(this.http);
     this.adminUser = new AdminUserAPI(this.http);
     this.adminPlugin = new AdminPluginAPI(this.http);
+    this.adminFeeds = new AdminFeedsAPI(this.http);
     this.friend = new FriendAPI(this.http);
     this.moments = new MomentsAPI(this.http);
     this.config = new ConfigAPI(this.http);

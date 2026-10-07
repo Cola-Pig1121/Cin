@@ -5,7 +5,8 @@ const created_at = integer("created_at", { mode: 'timestamp' }).default(sql`(uni
 const updated_at = integer("updated_at", { mode: 'timestamp' }).default(sql`(unixepoch())`).notNull();
 
 export const feeds = sqliteTable("feeds", {
-    id: integer("id").primaryKey(),
+    // 文章 ID：uuid（默认）或数字（由 feed.id_mode 决定），统一以文本存储
+    id: text("id").primaryKey(),
     alias: text("alias"),
     title: text("title"),
     summary: text("summary").default("").notNull(),
@@ -41,7 +42,7 @@ export const moments = sqliteTable("moments", {
 
 export const visits = sqliteTable("visits", {
     id: integer("id").primaryKey(),
-    feedId: integer("feed_id").references(() => feeds.id, { onDelete: 'cascade' }).notNull(),
+    feedId: text("feed_id").references(() => feeds.id, { onDelete: 'cascade' }).notNull(),
     ip: text("ip").notNull(),
     createdAt: created_at,
 }, (table) => ({
@@ -49,7 +50,7 @@ export const visits = sqliteTable("visits", {
 }));
 
 export const visitStats = sqliteTable("visit_stats", {
-    feedId: integer("feed_id").references(() => feeds.id, { onDelete: 'cascade' }).notNull().primaryKey(),
+    feedId: text("feed_id").references(() => feeds.id, { onDelete: 'cascade' }).notNull().primaryKey(),
     pv: integer("pv").default(0).notNull(),
     hllData: text("hll_data").default("").notNull(),
     updatedAt: updated_at,
@@ -102,7 +103,7 @@ export const users = sqliteTable("users", {
 
 export const comments = sqliteTable("comments", {
     id: integer("id").primaryKey(),
-    feedId: integer("feed_id").references(() => feeds.id, { onDelete: 'cascade' }).notNull(),
+    feedId: text("feed_id").references(() => feeds.id, { onDelete: 'cascade' }).notNull(),
     userId: integer("user_id").references(() => users.id, { onDelete: 'cascade' }),
     content: text("content").notNull(),
     guestName: text("guest_name").default(""),
@@ -129,7 +130,7 @@ export const hashtags = sqliteTable("hashtags", {
 }));
 
 export const feedHashtags = sqliteTable("feed_hashtags", {
-    feedId: integer("feed_id").references(() => feeds.id, { onDelete: 'cascade' }).notNull(),
+    feedId: text("feed_id").references(() => feeds.id, { onDelete: 'cascade' }).notNull(),
     hashtagId: integer("hashtag_id").references(() => hashtags.id, { onDelete: 'cascade' }).notNull(),
     createdAt: created_at,
     updatedAt: updated_at,

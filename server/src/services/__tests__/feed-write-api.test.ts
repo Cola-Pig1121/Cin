@@ -122,7 +122,8 @@ describe('FeedWriteApiService', () => {
       const body = await res.json() as any;
       expect(body.success).toBe(true);
       expect(body.data.created).toBe(true);
-      expect(typeof body.data.id).toBe('number');
+      // feeds.id 为文本主键（uuid 或数字文本）
+      expect(typeof body.data.id).toBe('string');
 
       const row = sqlite.prepare('SELECT * FROM feeds WHERE id = ?').get(body.data.id) as any;
       expect(row.title).toBe('API 创建的文章');
@@ -307,13 +308,16 @@ describe('FeedWriteApiService', () => {
     });
 
     it('should reject an invalid id', async () => {
+      // id 均按字符串处理：任意非空 id 若不存在，统一按未命中返回 404
       const res = await app.request('/abc', {
         method: 'PUT',
         headers: { ...asAdmin, 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: 'x' }),
       }, env);
 
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(404);
+      const body = await res.json() as any;
+      expect(body.error.code).toBe('FEED_NOT_FOUND');
     });
   });
 

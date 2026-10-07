@@ -934,5 +934,54 @@
   },
   "turnstile": {
     "load_failed": "人機驗證元件載入失敗，請檢查網路後重新整理頁面再試。"
+  },
+  "admin_articles": {
+    "title": "文章管理",
+    "description": "檢視全站文章（含草稿與未列出），檢查資訊並批次刪除。",
+    "total": "共 {{total}} 篇",
+    "untitled": "無標題",
+    "no_summary": "暫無摘要",
+    "top": "置頂",
+    "selected": "已選 {{count}} 篇",
+    "select": {
+      "all": "全選",
+      "none": "取消全選",
+      "row": "選擇文章 {{title}}"
+    },
+    "status": {
+      "published": "已發布",
+      "draft": "草稿",
+      "unlisted": "未列出"
+    },
+    "fields": {
+      "id": "ID：",
+      "alias": "別名：",
+      "created_at": "建立時間：",
+      "updated_at": "更新時間：",
+      "comments": "留言數：",
+      "pv": "瀏覽量："
+    },
+    "action": {
+      "view": "檢視",
+      "collapse": "收合"
+    },
+    "search": {
+      "placeholder": "依標題或別名搜尋",
+      "action": "搜尋",
+      "clear": "清除"
+    },
+    "pagination": {
+      "prev": "上一頁",
+      "next": "下一頁",
+      "status": "第 {{page}} / {{totalPages}} 頁"
+    },
+    "batch_delete": {
+      "action": "批次刪除",
+      "title": "批次刪除文章",
+      "confirm": "確定永久刪除選取的 {{count}} 篇文章嗎？其留言、標籤與瀏覽統計也會一併刪除。",
+      "missing": "已刪除 {{count}} 篇。以下 id 未找到：{{ids}}"
+    },
+    "empty": "還沒有任何文章",
+    "empty_filtered": "沒有符合關鍵字的文章"
   }
 }

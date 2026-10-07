@@ -176,12 +176,13 @@ API base URL: --api flag, or RIN_PUBLISH_API in .env.local.`);
     ? { ...payload }
     : { ...payload, dryRun: true };
 
-  const result = await publish(
-    apiBase,
-    token,
-    requestPayload,
-    values.id ? Number(values.id) : undefined,
-  );
+  // --id 传进来是 string，这里转成 number；非数字视为未指定
+  const targetId = values.id?.trim() ? Number(values.id.trim()) : undefined;
+  if (targetId !== undefined && !Number.isFinite(targetId)) {
+    throw new Error(`--id 需要是数字，收到 "${values.id}"`);
+  }
+
+  const result = await publish(apiBase, token, requestPayload, targetId);
 
   if (!result.success) {
     logger.error(`Publish failed: ${result.error?.code} ${result.error?.message ?? ""}`);

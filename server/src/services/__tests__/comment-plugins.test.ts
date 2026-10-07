@@ -110,7 +110,7 @@ describe('comment plugin integration', () => {
     await guestRequest('检查输入字段');
 
     expect(received).toBeDefined();
-    expect(received.feedId).toBe(1);
+    expect(received.feedId).toBe('1');
     expect(received.content).toBe('检查输入字段');
     expect(received.userId).toBeNull();
     expect(received.guestName).toBe('Tester');
@@ -135,7 +135,7 @@ describe('comment plugin integration', () => {
 
     expect(received).toBeDefined();
     expect(typeof received.id).toBe('number');
-    expect(received.feedId).toBe(1);
+    expect(received.feedId).toBe('1');
     expect(received.content).toBe('触发 after');
     expect(received.authorName).toBe('Tester');
   });
@@ -270,7 +270,7 @@ describe('comment-guard 示例插件', () => {
     pluginRegistry.register(commentGuard);
 
     const rejection = await pluginRegistry.beforeCommentCreate(
-      { feedId: 1, content: '这里有违禁词哦', userId: null, isLoggedIn: false, isAdmin: false },
+      { feedId: '1', content: '这里有违禁词哦', userId: null, isLoggedIn: false, isAdmin: false },
       ctx,
     );
 
@@ -289,7 +289,7 @@ describe('comment-guard 示例插件', () => {
     pluginRegistry.register(commentGuard);
 
     const rejection = await pluginRegistry.beforeCommentCreate(
-      { feedId: 1, content: '干净的评论内容', userId: null, isLoggedIn: false, isAdmin: false },
+      { feedId: '1', content: '干净的评论内容', userId: null, isLoggedIn: false, isAdmin: false },
       ctx,
     );
 

@@ -20,7 +20,8 @@ export interface RequestOptions {
 // Feed Types
 
 export interface Feed {
-  id: number;
+  /** 文章 ID：uuid 或数字文本，统一为字符串 */
+  id: string;
   title: string | null;
   content: string;
   uid: number;
@@ -43,7 +44,7 @@ export interface Feed {
 export interface FeedListResponse {
   size: number;
   data: Array<{
-    id: number;
+    id: string;
     title: string | null;
     summary: string;
     hashtags: Array<{ id: number; name: string }>;
@@ -62,7 +63,7 @@ export interface FeedListResponse {
 }
 
 export interface TimelineItem {
-  id: number;
+  id: string;
   title: string | null;
   createdAt: string;
 }
@@ -91,7 +92,7 @@ export interface UpdateFeedRequest {
 }
 
 export interface AdjacentFeed {
-  id: number;
+  id: string;
   title: string | null;
   summary: string;
   hashtags: Array<{ id: number; name: string }>;
@@ -189,7 +190,7 @@ export interface CreateCommentResponse {
 
 /** 待审核评论列表项：额外带出所属文章信息，供管理端展示 */
 export interface PendingComment extends Comment {
-  feedId: number;
+  feedId: string;
   feedTitle: string | null;
 }
 
@@ -438,10 +439,10 @@ export const API_PATHS = {
   FEED_TIMELINE: '/api/feed/timeline',
   FEED_GET: (id: number | string) => `/api/feed/${id}`,
   FEED_CREATE: '/api/feed',
-  FEED_UPDATE: (id: number) => `/api/feed/${id}`,
-  FEED_DELETE: (id: number) => `/api/feed/${id}`,
+  FEED_UPDATE: (id: string) => `/api/feed/${id}`,
+  FEED_DELETE: (id: string) => `/api/feed/${id}`,
   FEED_ADJACENT: (id: number | string) => `/api/feed/adjacent/${id}`,
-  FEED_SET_TOP: (id: number) => `/api/feed/top/${id}`,
+  FEED_SET_TOP: (id: string) => `/api/feed/top/${id}`,
 
   // Auth
   AUTH_STATUS: '/api/auth/status',
@@ -463,8 +464,8 @@ export const API_PATHS = {
   TAG_GET: (name: string) => `/api/tag/${encodeURIComponent(name)}`,
 
   // Comment
-  COMMENT_LIST: (feedId: number) => `/api/comment/${feedId}`,
-  COMMENT_CREATE: (feedId: number) => `/api/comment/${feedId}`,
+  COMMENT_LIST: (feedId: string) => `/api/comment/${feedId}`,
+  COMMENT_CREATE: (feedId: string) => `/api/comment/${feedId}`,
   COMMENT_DELETE: (id: number) => `/api/comment/${id}`,
   COMMENT_PENDING: '/api/comment/pending',
   COMMENT_SET_APPROVED: (id: number) => `/api/comment/${id}/approved`,
@@ -476,7 +477,7 @@ export const API_PATHS = {
 
   // 文章写入 API：供脚本与 CI 调用，结构化 JSON 响应，全部要求管理员权限
   FEED_WRITE: '/api/feed-write',
-  FEED_WRITE_DETAIL: (id: number) => `/api/feed-write/${id}`,
+  FEED_WRITE_DETAIL: (id: string) => `/api/feed-write/${id}`,
 
   // 插件管理
   ADMIN_PLUGINS: '/api/admin/plugins',

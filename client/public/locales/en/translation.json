@@ -934,5 +934,54 @@
   },
   "turnstile": {
     "load_failed": "Captcha failed to load. Check your network and refresh the page."
+  },
+  "admin_articles": {
+    "title": "Article Management",
+    "description": "View all articles site-wide (including drafts and unlisted), inspect details, and batch delete.",
+    "total": "{{total}} articles",
+    "untitled": "Untitled",
+    "no_summary": "No summary",
+    "top": "Pinned",
+    "selected": "{{count}} selected",
+    "select": {
+      "all": "Select all",
+      "none": "Deselect all",
+      "row": "Select article {{title}}"
+    },
+    "status": {
+      "published": "Published",
+      "draft": "Draft",
+      "unlisted": "Unlisted"
+    },
+    "fields": {
+      "id": "ID:",
+      "alias": "Alias:",
+      "created_at": "Created:",
+      "updated_at": "Updated:",
+      "comments": "Comments:",
+      "pv": "PV:"
+    },
+    "action": {
+      "view": "View",
+      "collapse": "Collapse"
+    },
+    "search": {
+      "placeholder": "Search by title or alias",
+      "action": "Search",
+      "clear": "Clear"
+    },
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next",
+      "status": "Page {{page}} of {{totalPages}}"
+    },
+    "batch_delete": {
+      "action": "Delete selected",
+      "title": "Batch delete articles",
+      "confirm": "Permanently delete {{count}} selected article(s)? Their comments, tags and view stats will be removed as well.",
+      "missing": "Deleted {{count}} article(s). The following ids were not found: {{ids}}"
+    },
+    "empty": "No articles yet",
+    "empty_filtered": "No articles match the keyword"
   }
 }

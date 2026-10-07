@@ -14,6 +14,7 @@ import { CallbackPage } from "../page/callback";
 import { CompatTasksPage } from "../page/compat-tasks";
 import { AdminPluginSettingsPage } from "../page/admin-plugin-settings";
 import { AdminPluginsPage } from "../page/admin-plugins";
+import { AdminArticlesPage } from "../page/admin-articles";
 import { AdminUsersPage } from "../page/admin-users";
 import { CommentModerationPage } from "../page/comment-moderation";
 import { ErrorPage } from "../page/error";
@@ -87,6 +88,10 @@ export function AppRoutes() {
 
       <AdminRoute path="/admin/users" requirePermission title={t("admin_users.title")} description={t("admin.users_description")}>
         <AdminUsersPage />
+      </AdminRoute>
+
+      <AdminRoute path="/admin/articles" requirePermission title={t("admin_articles.title")} description={t("admin_articles.description")}>
+        <AdminArticlesPage />
       </AdminRoute>
 
       <AdminRoute path="/admin/plugins" requirePermission title={t("plugins.title")} description={t("plugins.description")}>

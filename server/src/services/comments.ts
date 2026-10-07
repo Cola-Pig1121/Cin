@@ -131,9 +131,9 @@ export function CommentService(): Hono {
     app.get('/:feed', async (c: AppContext) => {
         const db = c.get('db');
         const admin = c.get('admin');
-        const feedId = parseInt(c.req.param('feed'));
+        const feedId = c.req.param('feed');
 
-        if (!Number.isFinite(feedId)) {
+        if (!feedId) {
             throw bizError(COMMENT_ERROR_CODES.COMMENT_FEED_NOT_FOUND, 'Feed not found', 404);
         }
 
@@ -180,9 +180,9 @@ export function CommentService(): Hono {
         const serverConfig = c.get('serverConfig');
         const cache = c.get('cache');
         const uid = c.get('uid');
-        const feedId = parseInt(c.req.param('feed'));
+        const feedId = c.req.param('feed');
 
-        if (!Number.isFinite(feedId)) {
+        if (!feedId) {
             throw bizError(COMMENT_ERROR_CODES.COMMENT_FEED_NOT_FOUND, 'Feed not found', 404);
         }
 
@@ -496,7 +496,7 @@ export function CommentService(): Hono {
  * 游客评论频率限制：同一篇文章每分钟最多 GUEST_COMMENT_RATE_LIMIT 条。
  * cache 未启用时此层失效 —— 它只是叠加在 Turnstile 之上的保险，不是唯一防刷手段。
  */
-async function applyGuestRateLimit(c: AppContext, feedId: number): Promise<{ allowed: boolean }> {
+async function applyGuestRateLimit(c: AppContext, feedId: string): Promise<{ allowed: boolean }> {
     const cache = c.get('cache');
     const key = `comment:rate:${feedId}`;
     const now = Date.now();

@@ -359,7 +359,7 @@ describe('插件启停', () => {
 
   describe('启用状态与钩子派发', () => {
     const input = {
-      feedId: 1,
+      feedId: '1',
       content: 'x',
       userId: null,
       isLoggedIn: false,

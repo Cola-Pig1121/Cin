@@ -79,7 +79,7 @@ describe('PluginRegistry', () => {
       );
 
       const result = await registry.beforeCommentCreate(
-        { feedId: 1, content: 'x', userId: null, isLoggedIn: false, isAdmin: false },
+        { feedId: '1', content: 'x', userId: null, isLoggedIn: false, isAdmin: false },
         makeCtx(),
       );
 
@@ -111,7 +111,7 @@ describe('PluginRegistry', () => {
       );
 
       const result = await registry.beforeCommentCreate(
-        { feedId: 1, content: 'x', userId: null, isLoggedIn: false, isAdmin: false },
+        { feedId: '1', content: 'x', userId: null, isLoggedIn: false, isAdmin: false },
         makeCtx(),
       );
 
@@ -134,7 +134,7 @@ describe('PluginRegistry', () => {
       );
 
       const result = await registry.beforeCommentCreate(
-        { feedId: 1, content: 'x', userId: null, isLoggedIn: false, isAdmin: false },
+        { feedId: '1', content: 'x', userId: null, isLoggedIn: false, isAdmin: false },
         makeCtx(),
       );
 
@@ -154,7 +154,7 @@ describe('PluginRegistry', () => {
 
       expect(
         registry.beforeCommentCreate(
-          { feedId: 1, content: 'x', userId: null, isLoggedIn: false, isAdmin: false },
+          { feedId: '1', content: 'x', userId: null, isLoggedIn: false, isAdmin: false },
           makeCtx(),
         ),
       ).rejects.toThrow('主动拒绝的理由');
@@ -171,7 +171,7 @@ describe('PluginRegistry', () => {
       );
 
       const result = await registry.beforeCommentCreate(
-        { feedId: 1, content: 'x', userId: null, isLoggedIn: false, isAdmin: false },
+        { feedId: '1', content: 'x', userId: null, isLoggedIn: false, isAdmin: false },
         makeCtx(),
       );
 
@@ -193,7 +193,7 @@ describe('PluginRegistry', () => {
       registry.reset();
 
       const result = await registry.beforeCommentCreate(
-        { feedId: 1, content: 'x', userId: null, isLoggedIn: false, isAdmin: false },
+        { feedId: '1', content: 'x', userId: null, isLoggedIn: false, isAdmin: false },
         makeCtx(),
       );
 
@@ -224,7 +224,7 @@ describe('PluginRegistry', () => {
 
       // 不应抛错
       await registry.afterCommentCreate(
-        { id: 1, feedId: 1, userId: null, content: 'x', authorName: 'a', approved: true },
+        { id: 1, feedId: '1', userId: null, content: 'x', authorName: 'a', approved: true },
         makeCtx(),
       );
     });
@@ -253,7 +253,7 @@ describe('PluginRegistry', () => {
       );
 
       await registry.afterCommentCreate(
-        { id: 1, feedId: 1, userId: null, content: 'x', authorName: 'a', approved: true },
+        { id: 1, feedId: '1', userId: null, content: 'x', authorName: 'a', approved: true },
         makeCtx(),
       );
 
@@ -314,7 +314,7 @@ describe('PluginRegistry', () => {
 
       expect(
         await registry.beforeCommentCreate(
-          { feedId: 1, content: 'x', userId: null, isLoggedIn: false, isAdmin: false },
+          { feedId: '1', content: 'x', userId: null, isLoggedIn: false, isAdmin: false },
           makeCtx(),
         ),
       ).toBeUndefined();

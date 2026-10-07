@@ -925,5 +925,54 @@
   },
   "turnstile": {
     "load_failed": "認証コンポーネントの読み込みに失敗しました。ネットワークを確認してページを再読み込みしてください。"
+  },
+  "admin_articles": {
+    "title": "記事管理",
+    "description": "サイト全体の記事（下書き・非公開を含む）を閲覧し、詳細を確認して一括削除できます。",
+    "total": "全 {{total}} 件",
+    "untitled": "無題",
+    "no_summary": "概要なし",
+    "top": "固定表示",
+    "selected": "{{count}} 件選択中",
+    "select": {
+      "all": "すべて選択",
+      "none": "選択解除",
+      "row": "記事 {{title}} を選択"
+    },
+    "status": {
+      "published": "公開済み",
+      "draft": "下書き",
+      "unlisted": "非公開"
+    },
+    "fields": {
+      "id": "ID：",
+      "alias": "エイリアス：",
+      "created_at": "作成日時：",
+      "updated_at": "更新日時：",
+      "comments": "コメント：",
+      "pv": "PV："
+    },
+    "action": {
+      "view": "詳細",
+      "collapse": "閉じる"
+    },
+    "search": {
+      "placeholder": "タイトルまたはエイリアスで検索",
+      "action": "検索",
+      "clear": "クリア"
+    },
+    "pagination": {
+      "prev": "前へ",
+      "next": "次へ",
+      "status": "{{totalPages}} ページ中 {{page}} ページ目"
+    },
+    "batch_delete": {
+      "action": "選択を削除",
+      "title": "記事を一括削除",
+      "confirm": "選択した {{count}} 件の記事を完全に削除しますか？関連するコメント・タグ・閲覧統計も削除されます。",
+      "missing": "{{count}} 件削除しました。次の ID は見つかりませんでした：{{ids}}"
+    },
+    "empty": "記事はまだありません",
+    "empty_filtered": "キーワードに一致する記事はありません"
   }
 }

@@ -120,6 +120,9 @@ export function FeedWriteApiService(): Hono {
 
     const date = createdAt ? new Date(createdAt) : new Date();
 
+    // 新文章 ID 按后台 `feed.id_mode` 生成：uuid（默认）或连续数字
+    const idMode = await c.get('serverConfig').getOrDefault<'uuid' | 'number'>('feed.id_mode', 'uuid');
+
     const result = await profileAsync(c, 'feed_write_insert', () =>
       insertFeed(db, {
         title,
@@ -134,7 +137,7 @@ export function FeedWriteApiService(): Hono {
         draft: draft ? 1 : 0,
         createdAt: date,
         updatedAt: date,
-      }),
+      }, idMode),
     );
 
     if (!result) {
@@ -182,8 +185,8 @@ export function FeedWriteApiService(): Hono {
    * 更新文章。所有字段可选，只传要改的。
    */
   app.put('/:id', adminApi(async (c: AppContext) => {
-    const id = Number(c.req.param('id'));
-    if (!Number.isInteger(id) || id <= 0) {
+    const id = c.req.param('id');
+    if (!id.trim()) {
       return fail(c, FEED_ERROR_CODES.FEED_VALIDATION_FAILED, 'Invalid article id', 400);
     }
 
@@ -290,8 +293,8 @@ export function FeedWriteApiService(): Hono {
    * 避免脚本误传 id 就把文章删了。
    */
   app.delete('/:id', adminApi(async (c: AppContext) => {
-    const id = Number(c.req.param('id'));
-    if (!Number.isInteger(id) || id <= 0) {
+    const id = c.req.param('id');
+    if (!id.trim()) {
       return fail(c, FEED_ERROR_CODES.FEED_VALIDATION_FAILED, 'Invalid article id', 400);
     }
 
@@ -338,8 +341,8 @@ export function FeedWriteApiService(): Hono {
    * 读单篇。写 API 的配套读接口，方便脚本确认写入结果。
    */
   app.get('/:id', adminApi(async (c: AppContext) => {
-    const id = Number(c.req.param('id'));
-    if (!Number.isInteger(id) || id <= 0) {
+    const id = c.req.param('id');
+    if (!id.trim()) {
       return fail(c, FEED_ERROR_CODES.FEED_VALIDATION_FAILED, 'Invalid article id', 400);
     }
 

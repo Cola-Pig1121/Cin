@@ -39,7 +39,7 @@ export interface CommentHooks {
 
 /** 传给 `beforeCreate` 的评论输入（尚未落库） */
 export interface CommentInput {
-  feedId: number;
+  feedId: string;
   content: string;
   /** 登录用户 id；游客为 null */
   userId: number | null;
@@ -55,7 +55,7 @@ export interface CommentInput {
 /** 传给 `afterCreate` 的已创建评论 */
 export interface CreatedComment {
   id: number;
-  feedId: number;
+  feedId: string;
   userId: number | null;
   content: string;
   authorName: string;

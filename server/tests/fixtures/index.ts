@@ -37,7 +37,7 @@ export function createMockDB() {
 
         -- Feeds table
         CREATE TABLE IF NOT EXISTS feeds (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id TEXT PRIMARY KEY,
             alias TEXT,
             title TEXT,
             summary TEXT DEFAULT '' NOT NULL,
@@ -67,7 +67,7 @@ export function createMockDB() {
         -- Visits table
         CREATE TABLE IF NOT EXISTS visits (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            feed_id INTEGER NOT NULL,
+            feed_id TEXT NOT NULL,
             ip TEXT NOT NULL,
             created_at INTEGER DEFAULT (unixepoch()),
             FOREIGN KEY (feed_id) REFERENCES feeds(id) ON DELETE CASCADE
@@ -75,7 +75,7 @@ export function createMockDB() {
 
         -- Visit stats table
         CREATE TABLE IF NOT EXISTS visit_stats (
-            feed_id INTEGER PRIMARY KEY NOT NULL,
+            feed_id TEXT PRIMARY KEY NOT NULL,
             pv INTEGER DEFAULT 0 NOT NULL,
             hll_data TEXT DEFAULT '' NOT NULL,
             updated_at INTEGER DEFAULT (unixepoch()),
@@ -108,7 +108,7 @@ export function createMockDB() {
         -- Comments table
         CREATE TABLE IF NOT EXISTS comments (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            feed_id INTEGER NOT NULL,
+            feed_id TEXT NOT NULL,
             user_id INTEGER,
             content TEXT NOT NULL,
             guest_name TEXT DEFAULT '',
@@ -131,7 +131,7 @@ export function createMockDB() {
 
         -- Feed-Hashtag relation table (note: named "feed_hashtags" not "feed_tags")
         CREATE TABLE IF NOT EXISTS feed_hashtags (
-            feed_id INTEGER NOT NULL,
+            feed_id TEXT NOT NULL,
             hashtag_id INTEGER NOT NULL,
             created_at INTEGER DEFAULT (unixepoch()),
             updated_at INTEGER DEFAULT (unixepoch()),
@@ -461,8 +461,8 @@ export function seedTestData(sqlite: Database) {
 
     sqlite.exec(`
         INSERT INTO feeds (id, title, content, uid, draft, listed) VALUES 
-            (1, 'Test Feed 1', 'Content 1', 1, 0, 1),
-            (2, 'Test Feed 2', 'Content 2', 1, 0, 1)
+            ('1', 'Test Feed 1', 'Content 1', 1, 0, 1),
+            ('2', 'Test Feed 2', 'Content 2', 1, 0, 1)
     `);
 
     sqlite.exec(`
@@ -473,14 +473,14 @@ export function seedTestData(sqlite: Database) {
 
     sqlite.exec(`
         INSERT INTO feed_hashtags (feed_id, hashtag_id) VALUES 
-            (1, 1),
-            (1, 2),
-            (2, 1)
+            ('1', 1),
+            ('1', 2),
+            ('2', 1)
     `);
 
     sqlite.exec(`
         INSERT INTO comments (id, feed_id, user_id, content, created_at) VALUES 
-            (1, 1, 2, 'Test comment 1', unixepoch()),
-            (2, 1, 1, 'Test comment 2', unixepoch())
+            (1, '1', 2, 'Test comment 1', unixepoch()),
+            (2, '1', 1, 'Test comment 2', unixepoch())
     `);
 }

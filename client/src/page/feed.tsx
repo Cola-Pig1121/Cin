@@ -433,7 +433,7 @@ function CommentInput({
 
     if (profile) {
       client.comment
-        .create(parseInt(id), { content, ...(captchaToken ? { captchaToken } : {}) })
+        .create(id, { content, ...(captchaToken ? { captchaToken } : {}) })
         .then(({ data, error: apiError }) => {
           if (apiError) {
             onFailure(apiError);
@@ -454,7 +454,7 @@ function CommentInput({
         return;
       }
       client.comment
-        .create(parseInt(id), {
+        .create(id, {
           content,
           guestName: guestName.trim(),
           guestEmail: guestEmail.trim() || undefined,
@@ -582,7 +582,7 @@ function Comments({ id }: { id: string }) {
 
   function loadComments() {
     client.comment
-      .list(parseInt(id))
+      .list(id)
       .then(({ data, error }) => {
         if (error) {
           setError(error.value as string);
