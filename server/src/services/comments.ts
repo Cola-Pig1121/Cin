@@ -16,7 +16,6 @@ import { bizError, validationErrorFromIssues } from "../errors";
 import { notify } from "../utils/webhook";
 import { resolveWebhookConfig } from "./config-helpers";
 import { buildCaptchaPublicConfig, verifyCaptchaToken } from "./captcha";
-import { createPluginContext, pluginRegistry } from "../plugins/registry";
 
 /**
  * 评论服务。关键约定：公开列表只返回 approved=1（审核真实生效）；
@@ -224,40 +223,6 @@ export function CommentService(): Hono {
             expectedAction: 'comment',
         }));
 
-        // 插件扩展点：评论提交前钩子。
-        // 放在人机验证之后、写库之前 —— 既不浪费验证额度，也不会留下脏数据。
-        // 插件返回非空字符串表示拒绝本次提交。
-        const pluginCtx = createPluginContext({
-            pluginName: 'comment',
-            db,
-            cache,
-            serverConfig,
-            clientConfig: c.get('clientConfig'),
-            env,
-            request: c,
-        });
-
-        const rejection = await profileAsync(c, 'comment_create_plugins', () =>
-            pluginRegistry.beforeCommentCreate({
-                feedId,
-                content: trimmedContent,
-                userId: uid ?? null,
-                guestName,
-                guestEmail,
-                guestWebsite,
-                isLoggedIn: Boolean(uid),
-                isAdmin: c.get('admin'),
-            }, pluginCtx),
-        );
-
-        if (typeof rejection === 'string' && rejection.length > 0) {
-            throw bizError(
-                COMMENT_ERROR_CODES.COMMENT_VALIDATION_FAILED,
-                rejection,
-                400,
-            );
-        }
-
         let insertedId: number;
         let approved: 1 | 0;
         let authorName: string;
@@ -333,18 +298,6 @@ export function CommentService(): Hono {
             );
             insertedId = inserted[0].id;
         }
-
-        // 插件扩展点：评论创建后钩子。评论已落库，插件抛错也不会回滚（registry 内部吞异常）
-        await profileAsync(c, 'comment_create_plugins_after', () =>
-            pluginRegistry.afterCommentCreate({
-                id: insertedId,
-                feedId,
-                userId: uid ?? null,
-                content: trimmedContent,
-                authorName,
-                approved: approved === 1,
-            }, pluginCtx),
-        );
 
         // Webhook 只在评论真正可见时通知：待审核评论发出去会误导站长的通知渠道。
         if (approved === 1) {

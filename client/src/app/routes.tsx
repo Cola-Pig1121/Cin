@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useContext } from "react";
+import { lazy, Suspense, useContext } from "react";
 import type { DefaultParams, PathPattern } from "wouter";
 import { Route, Switch, useLocation } from "wouter";
 import { AdminLayout } from "../components/admin-layout";
@@ -10,41 +10,50 @@ import { getHeaderLayoutDefinition } from "../components/site-header/layout-regi
 import { Tips, TipsPage } from "../components/tips";
 import useTableOfContents from "../hooks/useTableOfContents";
 import { useSiteConfig } from "../hooks/useSiteConfig";
-import { CallbackPage } from "../page/callback";
-import { CompatTasksPage } from "../page/compat-tasks";
-import { AdminPluginSettingsPage } from "../page/admin-plugin-settings";
-import { AdminPluginsPage } from "../page/admin-plugins";
-import { AdminArticlesPage } from "../page/admin-articles";
-import { AdminUsersPage } from "../page/admin-users";
-import { CommentModerationPage } from "../page/comment-moderation";
 import { ErrorPage } from "../page/error";
-import { FeedPage, TOCHeader } from "../page/feed";
-import { FeedsPage } from "../page/feeds";
-import { FriendsPage } from "../page/friends";
-import { HealthPage } from "../page/health";
-import { HashtagPage } from "../page/hashtag";
-import { HashtagsPage } from "../page/hashtags";
-import { LoginPage } from "../page/login";
-import { MomentsPage } from "../page/moments";
-import { ProfilePage } from "../page/profile";
-import { QueueStatusPage } from "../page/queue-status";
-import { RegisterPage } from "../page/register";
-import { SearchPage } from "../page/search";
-import { Settings } from "../page/settings";
-import { TimelinePage } from "../page/timeline";
-import { WritingPage } from "../page/writing";
+import { TOCHeader } from "../page/feed-toc-header";
 import { ProfileContext } from "../state/profile";
-import { listPluginPages, type PluginPage } from "../plugins/registry";
-// 副作用导入：执行注册，把插件页面注入下面的路由表。
-// 入口是 src/plugins/index.ts（client/plugins/ 下没有 index，导入目录会解析失败）。
-import "../plugins";
 import { tryInt } from "../utils/int";
 import { useTranslation } from "react-i18next";
+
+// 路由级代码分割：每个页面（及其重依赖，如 writing 的 monaco/mermaid、feed 的
+// markdown 代码高亮）拆成独立 chunk，由 Cloudflare 边缘按需缓存分发，
+// 首屏主包只保留外壳。named export 需映射到 default。
+const lazyNamed = (factory: () => Promise<Record<string, unknown>>, name: string) =>
+  lazy(() => factory().then((m) => ({ default: m[name] as React.ComponentType<any> })));
+
+const CallbackPage = lazyNamed(() => import("../page/callback"), "CallbackPage");
+const CompatTasksPage = lazyNamed(() => import("../page/compat-tasks"), "CompatTasksPage");
+const AdminArticlesPage = lazyNamed(() => import("../page/admin-articles"), "AdminArticlesPage");
+const AdminUsersPage = lazyNamed(() => import("../page/admin-users"), "AdminUsersPage");
+const CommentModerationPage = lazyNamed(() => import("../page/comment-moderation"), "CommentModerationPage");
+const FeedPage = lazyNamed(() => import("../page/feed"), "FeedPage");
+const FeedsPage = lazyNamed(() => import("../page/feeds"), "FeedsPage");
+const FriendsPage = lazyNamed(() => import("../page/friends"), "FriendsPage");
+const AnswerBookPage = lazyNamed(() => import("../page/answerbook"), "AnswerBookPage");
+const HealthPage = lazyNamed(() => import("../page/health"), "HealthPage");
+const HashtagPage = lazyNamed(() => import("../page/hashtag"), "HashtagPage");
+const HashtagsPage = lazyNamed(() => import("../page/hashtags"), "HashtagsPage");
+const LoginPage = lazyNamed(() => import("../page/login"), "LoginPage");
+const MomentsPage = lazyNamed(() => import("../page/moments"), "MomentsPage");
+const ProfilePage = lazyNamed(() => import("../page/profile"), "ProfilePage");
+const QueueStatusPage = lazyNamed(() => import("../page/queue-status"), "QueueStatusPage");
+const RegisterPage = lazyNamed(() => import("../page/register"), "RegisterPage");
+const SearchPage = lazyNamed(() => import("../page/search"), "SearchPage");
+const Settings = lazyNamed(() => import("../page/settings"), "Settings");
+const TimelinePage = lazyNamed(() => import("../page/timeline"), "TimelinePage");
+const WritingPage = lazyNamed(() => import("../page/writing"), "WritingPage");
+
+// 懒加载首帧占位：预留高度，避免内容出现时把页脚顶动造成 CLS
+function RouteFallback() {
+  return <div className="min-h-[60vh] w-full" aria-busy="true" />;
+}
 
 export function AppRoutes() {
   const { t } = useTranslation();
 
   return (
+    <Suspense fallback={<RouteFallback />}>
     <Switch>
       <AppRoute path="/">
         <FeedsPage />
@@ -60,6 +69,10 @@ export function AppRoutes() {
 
       <AppRoute path="/friends">
         <FriendsPage />
+      </AppRoute>
+
+      <AppRoute path="/answerbook">
+        <AnswerBookPage />
       </AppRoute>
 
       <AppRoute path="/hashtags">
@@ -94,14 +107,6 @@ export function AppRoutes() {
         <AdminArticlesPage />
       </AdminRoute>
 
-      <AdminRoute path="/admin/plugins" requirePermission title={t("plugins.title")} description={t("plugins.description")}>
-        <AdminPluginsPage />
-      </AdminRoute>
-
-      <AdminRoute path="/admin/plugins/:name/settings" requirePermission title={t("plugins.settings.title")} description={t("plugins.settings.description")}>
-        <AdminPluginSettingsPage />
-      </AdminRoute>
-
       <AdminRoute path="/admin/queue-status" requirePermission title={t("queue_status.title")} description={t("admin.queue_status_description")}>
         <QueueStatusPage />
       </AdminRoute>
@@ -134,13 +139,6 @@ export function AppRoutes() {
         <ProfilePage />
       </AppRoute>
 
-      {/* 插件页面：必须注册在 `/:alias` 通配路由之前，否则路径会被当成文章别名。
-          PluginRoute 必须带上 `path` prop —— wouter 的 Switch 直接读子元素的
-          props.path，为 undefined 时会退化成通配符，匹配掉所有路径（页面全白）。 */}
-      {listPluginPages().map((page) => (
-        <PluginRoute key={page.path} path={page.path} page={page} />
-      ))}
-
       <TocRoute path="/feed/:id">
         {(params, toc, cleanup) => <FeedPage id={params.id || ""} TOC={toc} clean={cleanup} />}
       </TocRoute>
@@ -171,6 +169,7 @@ export function AppRoutes() {
         <ErrorPage error={t("error.not_found")} />
       </AppRoute>
     </Switch>
+    </Suspense>
   );
 }
 
@@ -217,25 +216,6 @@ function AppRoute({
         });
       }}
     </Route>
-  );
-}
-
-function PluginRoute({ path, page }: { path: string; page: PluginPage }) {
-  const { t } = useTranslation();
-  const profile = useContext(ProfileContext);
-
-  // requireAdmin 只是 UI 层隐藏，不是安全边界 —— 服务端接口必须各自鉴权
-  const denied = page.requireAdmin && !profile?.permission;
-
-  // `path` 必须透传给 AppRoute：wouter 的 Switch 靠子元素的 props.path 匹配
-  return (
-    <AppRoute path={path}>
-      {denied ? (
-        <ErrorPage error={t("error.permission_denied")} />
-      ) : (
-        <page.Component />
-      )}
-    </AppRoute>
   );
 }
 

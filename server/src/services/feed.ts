@@ -25,6 +25,7 @@ import { stripMarkdown } from "../utils/markdown";
 import { syncFeedAISummaryQueueState } from "./feed-ai-summary";
 import { bindTagToPost } from "./tag";
 import { clearFeedCache, clearFeedCollectionCaches } from "./clear-feed-cache";
+import { notifyIndexNow } from "../runtime/indexnow";
 export { clearFeedCache } from "./clear-feed-cache";
 
 // Lazy-loaded modules for WordPress import
@@ -201,6 +202,11 @@ export function FeedService(): Hono<{
             resetSummary: true,
         }));
         await profileAsync(c, 'feed_create_cache_invalidate', () => clearFeedCollectionCaches(cache));
+
+        if (!draft) {
+            const url = alias ? `/post/${alias}` : `/feed/${result.insertedId}`;
+            void notifyIndexNow(env, [`${new URL(c.req.url).origin}${url}`]);
+        }
 
         return c.json(result);
     }, {
@@ -439,6 +445,10 @@ export function FeedService(): Hono<{
         }
 
         await profileAsync(c, 'feed_update_cache_invalidate', () => clearFeedCache(cache, id, feed.alias, alias || null));
+        if (!isDraft) {
+            const url = (alias || feed.alias) ? `/post/${alias || feed.alias}` : `/feed/${id}`;
+            void notifyIndexNow(env, [`${new URL(c.req.url).origin}${url}`]);
+        }
         return c.text('Updated');
     }), { message: 'Permission denied', status: 403 }));
 

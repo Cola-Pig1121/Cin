@@ -45,3 +45,9 @@ dist-ssr
 
 # Mimosa local security-scan / hook state
 .mimosa/
+
+# Local research notes (not product code)
+research/
+
+# Local helper scripts
+.push-via-api.mjs

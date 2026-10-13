@@ -1,6 +1,4 @@
 import type { RinApp } from "./app-types";
-import { AdminPluginService } from "../services/admin-plugins";
-import { PluginConfigService } from "../services/plugin-config";
 import { AdminUserService } from "../services/admin-users";
 import { AdminFeedsService } from "../services/admin-feeds";
 import { PasswordAuthService } from "../services/auth";
@@ -16,8 +14,8 @@ import { RSSService } from "../services/rss";
 import { SitemapService } from "../services/sitemap";
 import { BlobService, StorageService } from "../services/storage";
 import { TagService } from "../services/tag";
+import { UapisService } from "../services/uapis";
 import { UserService } from "../services/user";
-import { pluginRegistry } from "../plugins/registry";
 
 export function registerRoutes(app: RinApp) {
   app.get("/", (c) => c.text("Hi"));
@@ -35,9 +33,6 @@ export function registerRoutes(app: RinApp) {
   app.route("/moments", MomentsService());
   app.route("/user", UserService());
   // 管理员后台：用户列表 / 改权限 / 删除。每个端点内部独立校验 admin 标记。
-  // 插件公开配置：前端插件组件读自己的设置用，无需鉴权（只返回插件声明过的公开键）
-  app.route("/plugins", PluginConfigService());
-  app.route("/admin/plugins", AdminPluginService());
   app.route("/admin", AdminUserService());
   // 管理员后台：全站文章统一管理（含草稿/未列出）与批量删除，端点内部独立校验 admin
   app.route("/admin", AdminFeedsService());
@@ -49,10 +44,6 @@ export function registerRoutes(app: RinApp) {
   app.route("/", SitemapService());
   app.route("/favicon", FaviconService());
   app.route("/favicon.ico", FaviconService());
-
-  // 插件自定义路由挂到 /plugins/{插件名}/ 下。
-  // 放在所有内置路由之后，避免插件意外覆盖既有端点。
-  pluginRegistry.mountRoutes((path, subApp) => {
-    app.route(path, subApp as never);
-  });
+  // uapis.cn 聚合接口代理（一言 / 随机图片 / 答案之书 / 二维码），API Key 只留在服务端
+  app.route("/uapis", UapisService());
 }

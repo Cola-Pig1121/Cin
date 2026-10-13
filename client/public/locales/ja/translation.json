@@ -974,5 +974,23 @@
     },
     "empty": "記事はまだありません",
     "empty_filtered": "キーワードに一致する記事はありません"
+  },
+  "answerbook": {
+    "title": "トリビアボックス",
+    "saying": "一言",
+    "refresh": "更新",
+    "loading": "読み込み中…",
+    "book": "答えの書",
+    "book_desc": "はい/いいえの質問をして、答えをもらいましょう。",
+    "ask_placeholder": "質問を入力…",
+    "ask": "占う",
+    "thinking": "めくっています…",
+    "random_image": "ランダム画像"
+  },
+  "share": {
+    "qr": "QRコード",
+    "title": "共有",
+    "copy_link": "リンクをコピー",
+    "copied": "コピーしました"
   }
 }

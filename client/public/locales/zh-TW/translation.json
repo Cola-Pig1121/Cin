@@ -983,5 +983,23 @@
     },
     "empty": "還沒有任何文章",
     "empty_filtered": "沒有符合關鍵字的文章"
+  },
+  "answerbook": {
+    "title": "百寶箱",
+    "saying": "一言",
+    "refresh": "換一條",
+    "loading": "載入中…",
+    "book": "答案之書",
+    "book_desc": "心中默念一個是否的問題，向它求一個答案。",
+    "ask_placeholder": "輸入你的問題…",
+    "ask": "求答案",
+    "thinking": "正在翻閱…",
+    "random_image": "隨機圖片"
+  },
+  "share": {
+    "qr": "QR Code",
+    "title": "分享",
+    "copy_link": "複製連結",
+    "copied": "已複製"
   }
 }

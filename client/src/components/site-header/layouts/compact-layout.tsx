@@ -1,5 +1,4 @@
 import { BrandLink, HeaderActions, MobileTopHeader, NavBar } from "..";
-import { PluginSlot } from "../../plugin-slot";
 import { PreviewActions, PreviewBrand, PreviewCanvas, PreviewContent, PreviewNav } from "../preview-primitives";
 import type { HeaderLayoutDefinition } from "../layout-types";
 
@@ -64,15 +63,11 @@ export const compactLayoutDefinition: HeaderLayoutDefinition = {
       </PreviewCanvas>
     );
   },
-  renderRouteShell({ header, content, footer, path }) {
+  renderRouteShell({ header, content, footer }) {
     return (
       <>
         {header}
-        {/* 插件插槽：导航栏与内容之间。放轮播图、横幅之类 */}
-        <PluginSlot slot="below-header" path={path} />
         {content}
-        {/* 插件插槽：内容与页脚之间 */}
-        <PluginSlot slot="above-footer" path={path} />
         {footer}
       </>
     );

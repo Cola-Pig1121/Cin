@@ -983,5 +983,23 @@
     },
     "empty": "No articles yet",
     "empty_filtered": "No articles match the keyword"
+  },
+  "answerbook": {
+    "title": "Toolkit",
+    "saying": "Daily Quote",
+    "refresh": "Refresh",
+    "loading": "Loading…",
+    "book": "The Answer Book",
+    "book_desc": "Ask a yes/no question and get an answer.",
+    "ask_placeholder": "Type your question…",
+    "ask": "Ask",
+    "thinking": "Thinking…",
+    "random_image": "Random Image"
+  },
+  "share": {
+    "qr": "QR code",
+    "title": "Share",
+    "copy_link": "Copy link",
+    "copied": "Copied"
   }
 }

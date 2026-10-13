@@ -983,5 +983,23 @@
     },
     "empty": "还没有任何文章",
     "empty_filtered": "没有匹配关键词的文章"
+  },
+  "answerbook": {
+    "title": "百宝箱",
+    "saying": "一言",
+    "refresh": "换一条",
+    "loading": "加载中…",
+    "book": "答案之书",
+    "book_desc": "心中默念一个是否的问题，向它求一个答案。",
+    "ask_placeholder": "输入你的问题…",
+    "ask": "求答案",
+    "thinking": "正在翻阅…",
+    "random_image": "随机图片"
+  },
+  "share": {
+    "qr": "二维码",
+    "title": "分享",
+    "copy_link": "复制链接",
+    "copied": "已复制"
   }
 }

@@ -31,9 +31,6 @@ import type {
   AdminUserDetail,
   AdminUserUpdateResponse,
   AdminUserDeleteResponse,
-  AdminPluginListResponse,
-  AdminPluginToggleResponse,
-  PluginSettingsResponse,
   Friend,
   FriendListResponse,
   CreateFriendRequest,
@@ -526,41 +523,6 @@ class AdminUserAPI {
 }
 
 /**
- * 插件管理 API
- */
-class AdminPluginAPI {
-  constructor(private http: HttpClient) {}
-
-  // GET /api/admin/plugins
-  async list(): Promise<ApiResponse<AdminPluginListResponse>> {
-    return this.http.get<AdminPluginListResponse>(API_PATHS.ADMIN_PLUGINS);
-  }
-
-  // PUT /api/admin/plugins/:name — 启用或停用
-  async setEnabled(
-    name: string,
-    enabled: boolean,
-  ): Promise<ApiResponse<AdminPluginToggleResponse>> {
-    return this.http.put<AdminPluginToggleResponse>(API_PATHS.ADMIN_PLUGIN_TOGGLE(name), {
-      enabled,
-    });
-  }
-
-  // GET /api/admin/plugins/:name/settings
-  async getSettings(name: string): Promise<ApiResponse<PluginSettingsResponse>> {
-    return this.http.get<PluginSettingsResponse>(API_PATHS.ADMIN_PLUGIN_SETTINGS(name));
-  }
-
-  // PUT /api/admin/plugins/:name/settings — 批量保存
-  async saveSettings(
-    name: string,
-    values: Record<string, string>,
-  ): Promise<ApiResponse<{ success: boolean; data: { name: string; values: Record<string, string> } }>> {
-    return this.http.put(API_PATHS.ADMIN_PLUGIN_SETTINGS(name), { values });
-  }
-}
-
-/**
  * 管理员后台 API（文章统一管理：含草稿/未列出）
  */
 class AdminFeedsAPI {
@@ -859,6 +821,44 @@ class RSSAPI {
 // Main API Client Class
 // ============================================================================
 
+/**
+ * uapis.cn 聚合接口（经服务端 /api/uapis 代理，Key 不下发浏览器）。
+ * 图片类（随机图 / 二维码）返回可直接用于 <img src> 的同源 URL。
+ */
+class UapisAPI {
+  async saying(): Promise<ApiResponse<{ text?: string }>> {
+    try {
+      const res = await fetch(`/api/uapis/saying`);
+      const data = await res.json();
+      return res.ok && data?.success ? { data } : { error: { status: res.status, value: data?.error ?? "failed" } };
+    } catch (e) {
+      return { error: { status: 0, value: String(e) } };
+    }
+  }
+
+  async answerbook(question: string): Promise<ApiResponse<{ answer?: string }>> {
+    try {
+      const res = await fetch(`/api/uapis/answerbook?question=${encodeURIComponent(question)}`);
+      const data = await res.json();
+      return res.ok && data?.success ? { data } : { error: { status: res.status, value: data?.error ?? "failed" } };
+    } catch (e) {
+      return { error: { status: 0, value: String(e) } };
+    }
+  }
+
+  randomImageUrl(category?: string, bust?: string | number): string {
+    const params = new URLSearchParams();
+    if (category) params.set("category", category);
+    if (bust !== undefined) params.set("_r", String(bust));
+    const q = params.toString();
+    return `/api/uapis/random-image${q ? `?${q}` : ""}`;
+  }
+
+  qrcodeUrl(text: string, size = 256): string {
+    return `/api/uapis/qrcode?text=${encodeURIComponent(text)}&size=${size}`;
+  }
+}
+
 export class ApiClient {
   private http: HttpClient;
   feed: FeedAPI;
@@ -874,8 +874,8 @@ export class ApiClient {
   auth: AuthAPI;
   wp: WordPressAPI;
   rss: RSSAPI;
+  uapis: UapisAPI;
   adminUser: AdminUserAPI;
-  adminPlugin: AdminPluginAPI;
   adminFeeds: AdminFeedsAPI;
 
   constructor(baseUrl: string) {
@@ -885,7 +885,6 @@ export class ApiClient {
     this.comment = new CommentAPI(this.http);
     this.user = new UserAPI(this.http);
     this.adminUser = new AdminUserAPI(this.http);
-    this.adminPlugin = new AdminPluginAPI(this.http);
     this.adminFeeds = new AdminFeedsAPI(this.http);
     this.friend = new FriendAPI(this.http);
     this.moments = new MomentsAPI(this.http);
@@ -896,6 +895,7 @@ export class ApiClient {
     this.auth = new AuthAPI(this.http);
     this.wp = new WordPressAPI(this.http);
     this.rss = new RSSAPI(baseUrl);
+    this.uapis = new UapisAPI();
   }
 }
 

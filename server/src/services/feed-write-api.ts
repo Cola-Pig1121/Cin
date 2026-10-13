@@ -26,6 +26,7 @@ import {
 import { syncFeedAISummaryQueueState } from "./feed-ai-summary";
 import { bindTagToPost } from "./tag";
 import { clearFeedCache, clearFeedCollectionCaches } from "./clear-feed-cache";
+import { notifyIndexNow } from "../runtime/indexnow";
 
 /** 统一的成功响应 */
 function ok<T>(c: AppContext, data: T, status: 200 | 201 = 200) {
@@ -169,11 +170,17 @@ export function FeedWriteApiService(): Hono {
       console.error('[feed-write] cache invalidation failed', error);
     }
 
+    const createdUrl = alias ? `/post/${alias}` : `/feed/${result.insertedId}`;
+    // 已发布文章主动推送 IndexNow（Bing/Yandex 秒级收录）；草稿不推，失败不影响发文
+    if (!draft) {
+      void notifyIndexNow(c.get('env'), [`${new URL(c.req.url).origin}${createdUrl}`]);
+    }
+
     return ok(c, {
       dryRun: false,
       created: true,
       id: result.insertedId,
-      url: alias ? `/post/${alias}` : `/feed/${result.insertedId}`,
+      url: createdUrl,
       title,
       draft: Boolean(draft),
     }, 201);
@@ -278,11 +285,18 @@ export function FeedWriteApiService(): Hono {
       console.error('[feed-write] cache invalidation failed', error);
     }
 
+    const updatedUrl = (alias ?? existing.alias) ? `/post/${alias ?? existing.alias}` : `/feed/${id}`;
+    // 更新后若为已发布状态则推送 IndexNow；草稿不推
+    const finalDraft = draft === undefined ? existing.draft === 1 : Boolean(draft);
+    if (!finalDraft) {
+      void notifyIndexNow(c.get('env'), [`${new URL(c.req.url).origin}${updatedUrl}`]);
+    }
+
     return ok(c, {
       dryRun: false,
       updated: true,
       id,
-      url: (alias ?? existing.alias) ? `/post/${alias ?? existing.alias}` : `/feed/${id}`,
+      url: updatedUrl,
     });
   }));
 
