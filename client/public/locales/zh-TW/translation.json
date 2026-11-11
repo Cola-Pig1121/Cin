@@ -858,7 +858,9 @@
       "action": "刪除",
       "title": "刪除評論",
       "confirm": "將永久刪除這則評論，此操作無法復原。確認繼續？"
-    }
+    },
+    "scoped": "正在檢視單篇文章的評論",
+    "view_all": "檢視全部"
   },
   "admin_users": {
     "title": "使用者管理",
@@ -963,7 +965,9 @@
     },
     "action": {
       "view": "檢視",
-      "collapse": "收合"
+      "collapse": "收合",
+      "edit": "編輯",
+      "comments": "評論"
     },
     "search": {
       "placeholder": "依標題或別名搜尋",
@@ -983,5 +987,23 @@
     },
     "empty": "還沒有任何文章",
     "empty_filtered": "沒有符合關鍵字的文章"
+  },
+  "answerbook": {
+    "title": "百寶箱",
+    "saying": "一言",
+    "refresh": "換一條",
+    "loading": "載入中…",
+    "book": "答案之書",
+    "book_desc": "心中默念一個是否的問題，向它求一個答案。",
+    "ask_placeholder": "輸入你的問題…",
+    "ask": "求答案",
+    "thinking": "正在翻閱…",
+    "random_image": "隨機圖片"
+  },
+  "share": {
+    "qr": "QR Code",
+    "title": "分享",
+    "copy_link": "複製連結",
+    "copied": "已複製"
   }
 }

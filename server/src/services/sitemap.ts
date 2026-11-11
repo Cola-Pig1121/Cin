@@ -96,6 +96,7 @@ async function generateSitemapXml(env: Env, db: DB, requestUrl?: string): Promis
   addUrl("/moments", momentRows[0]?.updatedAt);
   addUrl("/friends", friendRows[0]?.updatedAt);
   addUrl("/hashtags", latestHashtagUpdatedAt);
+  addUrl("/answerbook", null);
 
   // 文章：优先使用 alias，否则回退到 /feed/:id
   for (const feed of feedRows) {

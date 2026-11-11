@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Helmet } from 'react-helmet';
+import { Seo } from "../components/seo";
 import { useTranslation } from "react-i18next";
 import { Link } from "wouter";
 import { HashTag } from "../components/hashtag";
 import { Waiting } from "../components/loading";
 import { client } from "../app/runtime";
 import { useSiteConfig } from "../hooks/useSiteConfig";
-import { siteName } from "../utils/constants";
 
 type Hashtag = {
     id: number;
@@ -48,14 +47,12 @@ export function HashtagsPage() {
 
     return (
         <>
-            <Helmet>
-                <title>{`${t('hashtags')} - ${siteConfig.name}`}</title>
-                <meta property="og:site_name" content={siteName} />
-                <meta property="og:title" content={t('hashtags')} />
-                <meta property="og:image" content={siteConfig.avatar} />
-                <meta property="og:type" content="article" />
-                <meta property="og:url" content={document.URL} />
-            </Helmet>
+            <Seo
+                title={`${t('hashtags')} - ${siteConfig.name}`}
+                description={siteConfig.description}
+                path="/hashtags"
+                image={siteConfig.avatar}
+            />
             <Waiting for={hashtags}>
                 <main className="w-full flex flex-col justify-center items-center mb-8 ani-show">
                     <div className="wauto text-start py-4 text-4xl font-bold">

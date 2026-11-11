@@ -1,11 +1,11 @@
 import type { Feed, CaptchaConfig } from "@rin/api";
-import { Modal } from "@rin/ui";
 import { useContext, useEffect, useRef, useState } from "react";
 import { Helmet } from "react-helmet";
 import { useTranslation } from "react-i18next";
 import Popup from "reactjs-popup";
 import { Link, useLocation } from "wouter";
 import { useAlert, useConfirm } from "../components/dialog";
+import { PostShare } from "../components/post-share";
 import { HashTag } from "../components/hashtag";
 import { ImageWithFallback } from "../components/image-with-fallback";
 import { Waiting } from "../components/loading";
@@ -165,6 +165,21 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
                 : feed.content
             }
           />
+          <link rel="canonical" href={document.URL} />
+          <meta name="twitter:card" content="summary_large_image" />
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "BlogPosting",
+              headline: feed.title ?? "Unnamed",
+              image: headImage ?? siteConfig.avatar ?? undefined,
+              datePublished: feed.createdAt,
+              dateModified: feed.updatedAt,
+              author: { "@type": "Person", name: feed.user.username },
+              description: feed.content.slice(0, 200),
+              mainEntityOfPage: { "@type": "WebPage", "@id": document.URL },
+            })}
+          </script>
         </Helmet>
       )}
       <div className="w-full flex flex-row justify-center ani-show">
@@ -307,6 +322,7 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
                   </div>
                 </div>
               </article>
+              {id !== "about" && <PostShare />}
               {id !== "about" && <AdjacentSection id={id} setError={setError} />}
               {feed && <Comments id={`${feed.id}`} />}
               <div className="h-16" />
@@ -324,32 +340,6 @@ export function FeedPage({ id, TOC, clean }: { id: string, TOC: () => JSX.Elemen
       <AlertUI />
       <ConfirmUI />
     </Waiting>
-  );
-}
-
-export function TOCHeader({ TOC }: { TOC: () => JSX.Element }) {
-  const [isOpened, setIsOpened] = useState(false);
-
-  return (
-    <div className="shrink-0 lg:hidden">
-      <button
-        onClick={() => setIsOpened(true)}
-        className="w-10 h-10 rounded-full flex flex-row items-center justify-center"
-      >
-        <i className="ri-menu-2-line text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100 ri-lg md:ri-sm md:t-secondary"></i>
-      </button>
-      <Modal
-        isOpen={isOpened}
-        onRequestClose={() => setIsOpened(false)}
-        contentLabel="Table of contents"
-        size="lg"
-        panelClassName="p-4"
-      >
-        <div className="relative max-h-[75vh] overflow-auto t-primary">
-          <TOC />
-        </div>
-      </Modal>
-    </div>
   );
 }
 

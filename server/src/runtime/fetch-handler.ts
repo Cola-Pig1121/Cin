@@ -1,4 +1,5 @@
 import { getApp } from "./app-instance";
+import { injectSeoHead, resolveSeoHead } from "./seo-head";
 
 const ROOT_FEED_PATTERN = /^\/(rss\.xml|atom\.xml|rss\.json|feed\.json|feed\.xml)$/;
 const APP_PUBLIC_ROUTE_PATTERN = /^\/(favicon|favicon\.ico)(?:\/|$)/;
@@ -55,9 +56,23 @@ async function serveSpaEntry(request: Request, env: Env) {
     const url = new URL(request.url);
     const indexRequest = new Request(new URL("/", url.origin), request);
     const indexResponse = await env.ASSETS.fetch(indexRequest);
-    if (indexResponse.status === 200 || (indexResponse.status >= 300 && indexResponse.status < 400)) {
+    if (!(indexResponse.status === 200 || (indexResponse.status >= 300 && indexResponse.status < 400))) {
+      return null;
+    }
+
+    // 仅文章路由查库注入 OG；其余页面返回默认 index.html（可缓存）
+    const seo = env.DB ? await resolveSeoHead(url.pathname, url.origin, env.DB) : null;
+    if (!seo) {
       return indexResponse;
     }
+    const html = await indexResponse.text();
+    return new Response(injectSeoHead(html, seo), {
+      status: 200,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "public, max-age=60, stale-while-revalidate=600",
+      },
+    });
   } catch {}
 
   return null;

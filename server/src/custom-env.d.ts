@@ -7,6 +7,12 @@ declare global {
     /** 站点公开访问地址（可选）。未设置时 sitemap/robots 回退到请求来源 origin */
     FRONTEND_URL?: string;
 
+    /** uapis.cn 聚合接口的 API Key（可选，仅服务端使用，绝不下发浏览器） */
+    UAPIS_API_KEY?: string;
+
+    /** IndexNow key（与 client/public/<key>.txt 一致），用于发文后主动推送 */
+    INDEXNOW_KEY?: string;
+
     /**
      * 对象存储后端选择：r2 / s3 / supabase。
      * 留空时按配置自动探测（有 Supabase 配置 → supabase，有 R2 binding → r2，否则 s3）。

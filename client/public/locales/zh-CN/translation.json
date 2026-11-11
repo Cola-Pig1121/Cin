@@ -858,7 +858,9 @@
       "action": "删除",
       "title": "删除评论",
       "confirm": "将永久删除这条评论，此操作不可撤销。确认继续？"
-    }
+    },
+    "scoped": "正在查看单篇文章的评论",
+    "view_all": "查看全部"
   },
   "admin_users": {
     "title": "用户管理",
@@ -963,7 +965,9 @@
     },
     "action": {
       "view": "查看",
-      "collapse": "收起"
+      "collapse": "收起",
+      "edit": "编辑",
+      "comments": "评论"
     },
     "search": {
       "placeholder": "按标题或别名搜索",
@@ -983,5 +987,23 @@
     },
     "empty": "还没有任何文章",
     "empty_filtered": "没有匹配关键词的文章"
+  },
+  "answerbook": {
+    "title": "百宝箱",
+    "saying": "一言",
+    "refresh": "换一条",
+    "loading": "加载中…",
+    "book": "答案之书",
+    "book_desc": "心中默念一个是否的问题，向它求一个答案。",
+    "ask_placeholder": "输入你的问题…",
+    "ask": "求答案",
+    "thinking": "正在翻阅…",
+    "random_image": "随机图片"
+  },
+  "share": {
+    "qr": "二维码",
+    "title": "分享",
+    "copy_link": "复制链接",
+    "copied": "已复制"
   }
 }

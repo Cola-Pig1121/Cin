@@ -858,7 +858,9 @@
       "action": "Delete",
       "title": "Delete comment",
       "confirm": "This permanently deletes the comment. This cannot be undone. Continue?"
-    }
+    },
+    "scoped": "Viewing comments for one article",
+    "view_all": "View all"
   },
   "admin_users": {
     "title": "User management",
@@ -963,7 +965,9 @@
     },
     "action": {
       "view": "View",
-      "collapse": "Collapse"
+      "collapse": "Collapse",
+      "edit": "Edit",
+      "comments": "Comments"
     },
     "search": {
       "placeholder": "Search by title or alias",
@@ -983,5 +987,23 @@
     },
     "empty": "No articles yet",
     "empty_filtered": "No articles match the keyword"
+  },
+  "answerbook": {
+    "title": "Toolkit",
+    "saying": "Daily Quote",
+    "refresh": "Refresh",
+    "loading": "Loading…",
+    "book": "The Answer Book",
+    "book_desc": "Ask a yes/no question and get an answer.",
+    "ask_placeholder": "Type your question…",
+    "ask": "Ask",
+    "thinking": "Thinking…",
+    "random_image": "Random Image"
+  },
+  "share": {
+    "qr": "QR code",
+    "title": "Share",
+    "copy_link": "Copy link",
+    "copied": "Copied"
   }
 }

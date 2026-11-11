@@ -38,6 +38,10 @@ const WORKER_SECRET_KEYS = [
   "RESEND_API_KEY",
   "MAIL_GATEWAY_TOKEN",
   "MAIL_JWT_SECRET",
+  // uapis.cn 聚合接口 Key（一言/随机图/答案之书/二维码），仅服务端代理使用
+  "UAPIS_API_KEY",
+  // IndexNow key：发文后主动推送 URL 给 Bing/Yandex（与 public/<key>.txt 一致）
+  "INDEXNOW_KEY",
 ] as const;
 
 /**
@@ -115,8 +119,10 @@ async function syncWorkerSecrets(workerName: string) {
 }
 
 async function buildClient() {
+  // 默认总是重建：陈旧 dist/client 复用会让部署悄悄上线旧前端。
+  // CI 从 build artifact 恢复 dist 时显式设 RIN_USE_PREBUILT_CLIENT=1 才复用。
   const distIndex = Bun.file("./dist/client/index.html");
-  if (await distIndex.exists()) {
+  if (process.env.RIN_USE_PREBUILT_CLIENT === "1" && (await distIndex.exists())) {
     console.log("✅ Using pre-built client from ./dist/client");
     return;
   }
